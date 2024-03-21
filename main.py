@@ -49,7 +49,7 @@ compute_time = np.array([
 
 # 获取当前节点到所有目标微服务所在节点的传输时间(假设不可到达的传输时间为99999ms)
 #                                   与处理能力(假设不可到达的处理时间为99999ms)
-def get_transmit_time_by_node_and_service(node: int, service: int):
+def get_compute_and_transmit_time(node: int, service: int):
     compute_vector = []
     transmit_vector = []
     row = instance[service]
@@ -97,7 +97,7 @@ def get_nodes_of_a_service(service: int):
 
 
 # 当前节点当前服务被请求的总数
-def get_request_number_by_node_and_service(node, service):
+def get_request_number_by_node_and_service(node, service) -> int:
     # 找到所有上游微服务
     services = []
     count = 0
@@ -105,14 +105,22 @@ def get_request_number_by_node_and_service(node, service):
         if row[service] == 1:
             services.append(count)
         count += 1
-    # 遍历所有上游微服务
+
+    request_number = 0
+
+    # 遍历所有上游微服务，获取所有的请求数
     for upstream_service in services:
         upstream_nodes = get_nodes_of_a_service(upstream_service)
         # 遍历本服务部署的所有节点
         for upstream_node in upstream_nodes:
-            # 获取此服务此节点的服务完成率
+            # 获取此服务此节点的服务速率
             compute_ability = 1 / compute_time[upstream_service, upstream_node]
-    return
+            # 根据路由函数得到向目标节点转发的速率
+            compute_and_transmit_time = get_compute_and_transmit_time(upstream_node, service)
+            route_vector = route(compute_and_transmit_time[0], compute_and_transmit_time[1])
+            request_number += compute_ability * route_vector[service]
+
+    return request_number
 
 
 if __name__ == '__main__':
