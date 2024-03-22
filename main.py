@@ -19,6 +19,8 @@ lambda_in = delta * lambda_out
 start_service = [0, 3]
 # 接入点所在的节点
 access_node = [0, 3]
+# 一秒对应的毫秒数
+second = 1000
 
 # 实例部署情况，行表示微服务，列表示节点
 instance = np.random.randint(2, size=(rows, cols))
@@ -58,6 +60,10 @@ compute_time = np.array([
     [9, 9 / 6 * 5, 9 / 3 * 2, 9 / 2, 9 / 3],
     [78, 78 / 6 * 5, 78 / 3 * 2, 78 / 2, 78 / 3]
 ])
+
+# 节点计算能力矩阵
+compute_ability = second / np.array(compute_time)
+
 
 # 请求到达率矩阵，即每个微服务在每个节点上的服务到达率
 # 行表示微服务，列表示节点
@@ -103,7 +109,19 @@ def update_request_arrive_array_matrix():
                         arrive_app[next_service, :] += request_dispatch
                     current_service = next_service
         arrive += arrive_app
+
     return arrive
+
+
+# 计算一个微服务的加权平均排队时间
+def get_service_queue_time(service: int) -> int:
+    request_number = request_arrive[service, :].sum()
+    mean_queue_time = 0
+    for node in range(request_arrive[service, :]):
+        request = request_arrive[service, node]
+        if request != 0.0:
+            mean_queue_time += request / request_number / (compute_ability[service, node] - request_arrive[service, node])
+    return mean_queue_time
 
 
 # 获取当前节点到所有目标微服务所在节点的传输时间(假设不可到达的传输时间为99999ms)
@@ -163,3 +181,5 @@ if __name__ == '__main__':
     print(request_arrive)
     request_arrive = update_request_arrive_array_matrix()
     print(request_arrive)
+    print(get_service_queue_time(0))
+    print(compute_ability)
