@@ -21,6 +21,22 @@ start_service = [0, 3]
 access_node = [0, 3]
 # 一秒对应的毫秒数
 second = 1000
+# 微服务占用资源情况，行表示微服务，列表示资源 cpu | ram | disk
+service_resource_occupancy = np.array([
+    [2.0, 512, 50],
+    [1.0, 256, 40],
+    [1.0, 380, 120],
+    [0.5, 128, 20],
+    [1.5, 420, 70],
+])
+# 节点资源容量情况，行表示节点，列表示资源 cpu | ram | disk
+node_resource_capacity = np.array([
+    [16, 2048, 2048],
+    [10, 2048, 2048],
+    [7, 2048, 2048],
+    [4, 1024, 2048],
+    [12, 2048, 2048],
+])
 
 # 实例部署情况，行表示微服务，列表示节点
 instance = np.random.randint(2, size=(rows, cols))
@@ -64,10 +80,29 @@ compute_time = np.array([
 # 节点计算能力矩阵
 compute_ability = second / np.array(compute_time)
 
-
 # 请求到达率矩阵，即每个微服务在每个节点上的服务到达率
 # 行表示微服务，列表示节点
 request_arrive = np.zeros((rows, cols))
+
+
+# 计算一条链路的总花费时间
+def get_app_total_time(first_service: int) -> int:
+    total_time = 0
+    current_service = first_service
+    while np.array_equal(service_dependency[current_service, :], np.zeros(rows)) is False:
+        next_service = np.where(service_dependency[current_service, :] == 1)[0][0]
+        total_time += get_service_queue_time(current_service) + get_service_transmit_time(current_service)
+        current_service = next_service
+    return total_time
+
+
+# 计算所有链路中最大时间
+def get_max_total_time() -> int:
+    max_total_time = 0
+    for app in start_service:
+        total_time = get_app_total_time(app)
+        max_total_time = max(max_total_time, total_time)
+    return max_total_time
 
 
 # 根据当前转发函数、流量调控因子和服务依赖情况更新请求达到矩阵
@@ -117,11 +152,46 @@ def update_request_arrive_array_matrix():
 def get_service_queue_time(service: int) -> int:
     request_number = request_arrive[service, :].sum()
     mean_queue_time = 0
-    for node in range(request_arrive[service, :]):
+    for node in range(len(request_arrive[service, :])):
         request = request_arrive[service, node]
         if request != 0.0:
-            mean_queue_time += request / request_number / (compute_ability[service, node] - request_arrive[service, node])
+            # 如果服务到达率 > 服务完成率，则排队时间无限长
+            if compute_ability[service, node] > request_arrive[service, node]:
+                mean_queue_time += request / request_number / (
+                        compute_ability[service, node] - request_arrive[service, node])
+            else:
+                mean_queue_time = max_time
     return mean_queue_time
+
+
+# 计算一个微服务的加权传输时间
+def get_service_transmit_time(service: int) -> int:
+    mean_transmit_time = 0
+    request_number = request_arrive[service, :].sum()
+
+    # 如果是起始微服务，无上游微服务
+    for index in range(len(start_service)):
+        if service == start_service[index]:
+            # 拿到接入点节点
+            access = access_node[index]
+            for node in range(len(request_arrive[service, :])):
+                request = request_arrive[service, node]
+                if request != 0.0:
+                    mean_transmit_time += request / request_number * net_delay[access, node]
+            return mean_transmit_time
+
+    # 如果不是起始微服务，需要计算所有上游微服务
+    upstream_services = get_upstream_services_of_a_service(service)
+    for upstream_service in upstream_services:
+        # 遍历上游微服务的所有节点
+        for upstream_node in get_nodes_of_a_service(upstream_service):
+            compute_and_transmit_time = get_compute_and_transmit_time(upstream_node, service)
+            route_vector = route(compute_and_transmit_time[0], compute_and_transmit_time[1])
+            # 遍历当前微服务的所有节点
+            for node in get_nodes_of_a_service(service):
+                mean_transmit_time += request_arrive[upstream_service, upstream_node] * \
+                                      route_vector[node] * net_delay[upstream_node, node] / request_number
+    return mean_transmit_time
 
 
 # 获取当前节点到所有目标微服务所在节点的传输时间(假设不可到达的传输时间为99999ms)
@@ -173,6 +243,40 @@ def get_nodes_of_a_service(service: int) -> list:
     return node_vector
 
 
+# 获取一个微服务上游微服务的列表
+def get_upstream_services_of_a_service(service: int) -> list:
+    upstream_services = []
+    for upstream_service in range(len(service_dependency)):
+        if service_dependency[upstream_service, service] == 1:
+            upstream_services.append(upstream_service)
+    return upstream_services
+
+
+# 检测实例部署约束，即每个微服务至少部署一个实例约束
+def instance_constrains() -> bool:
+    for service in range(len(instance)):
+        instance_num = instance[service, :].sum()
+        if instance_num == 0:
+            return False
+    return True
+
+
+# 实例部署资源约束，即每个节点部署的总资源不能超过本身容量
+def node_capacity_constrains() -> bool:
+    # 遍历每个节点
+    for node in range(cols):
+        # 计算所有微服务的占用
+        cpu, ram, disk = 0, 0, 0
+        for service in range(rows):
+            cpu += service_resource_occupancy[service, 0] * instance[service, node]
+            ram += service_resource_occupancy[service, 1] * instance[service, node]
+            disk += service_resource_occupancy[service, 2] * instance[service, node]
+        if cpu > node_resource_capacity[node, 0] or ram > node_resource_capacity[node, 1] \
+                or disk > node_resource_capacity[node, 2]:
+            return False
+    return True
+
+
 if __name__ == '__main__':
     print(instance)
     # print(get_nodes_of_a_service(2))
@@ -183,3 +287,8 @@ if __name__ == '__main__':
     print(request_arrive)
     print(get_service_queue_time(0))
     print(compute_ability)
+    print(get_app_total_time(0))
+    print(get_app_total_time(3))
+    print(get_max_total_time())
+    print(instance_constrains())
+    print(node_capacity_constrains())
