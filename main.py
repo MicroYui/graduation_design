@@ -1,5 +1,16 @@
 import numpy as np
+import torch
 
+import net
+
+# 应用耗费成本
+app_fee = 100
+# cpu | ram | disk 单价
+cpu_fee = 1
+ram_fee = 0.1
+disk_fee = 0.01
+# 可接受的最大成本
+max_fee = 800
 # 应用请求次数
 app_1_request = 30
 app_2_request = 10
@@ -86,21 +97,26 @@ request_arrive = np.zeros((rows, cols))
 
 
 # 计算一条链路的总花费时间
-def get_app_total_time(first_service: int) -> int:
+def get_app_total_time(first_service: int):
     total_time = 0
     current_service = first_service
     while np.array_equal(service_dependency[current_service, :], np.zeros(rows)) is False:
         next_service = np.where(service_dependency[current_service, :] == 1)[0][0]
         total_time += get_service_queue_time(current_service) + get_service_transmit_time(current_service)
+        # print("get_service_queue_time: ", get_service_queue_time(current_service))
+        # print("get_service_transmit_time: ", get_service_transmit_time(current_service))
         current_service = next_service
     return total_time
 
 
 # 计算所有链路中最大时间
-def get_max_total_time() -> int:
+def get_max_total_time():
     max_total_time = 0
+    # if not cost_constrains() or not instance_constrains() or not node_capacity_constrains():
+    #     return max_time
     for app in start_service:
         total_time = get_app_total_time(app)
+        # print("total_time: ", total_time)
         max_total_time = max(max_total_time, total_time)
     return max_total_time
 
@@ -122,7 +138,7 @@ def update_request_arrive_array_matrix():
         compute_and_transmit_time = get_compute_and_transmit_time(access, first_service)
         # 获取转发概率向量
         route_vector = route(compute_and_transmit_time[0], compute_and_transmit_time[1])
-        request_dispatch = np.array(route_vector) * lambda_out[index]
+        request_dispatch = np.array(route_vector) * lambda_in[index]
         # 将请求到达率写入矩阵
         arrive_app[first_service, :] += request_dispatch
 
@@ -149,7 +165,7 @@ def update_request_arrive_array_matrix():
 
 
 # 计算一个微服务的加权平均排队时间
-def get_service_queue_time(service: int) -> int:
+def get_service_queue_time(service: int):
     request_number = request_arrive[service, :].sum()
     mean_queue_time = 0
     for node in range(len(request_arrive[service, :])):
@@ -165,9 +181,11 @@ def get_service_queue_time(service: int) -> int:
 
 
 # 计算一个微服务的加权传输时间
-def get_service_transmit_time(service: int) -> int:
+def get_service_transmit_time(service: int):
     mean_transmit_time = 0
     request_number = request_arrive[service, :].sum()
+    # if request_number == 0:
+    #     return 0
 
     # 如果是起始微服务，无上游微服务
     for index in range(len(start_service)):
@@ -199,6 +217,7 @@ def get_service_transmit_time(service: int) -> int:
 def get_compute_and_transmit_time(node: int, service: int):
     compute_vector = []
     transmit_vector = []
+    global instance
     row = instance[service]
     # 遍历所有节点
     for remote_node in range(len(row)):
@@ -216,27 +235,48 @@ def get_compute_and_transmit_time(node: int, service: int):
     return [compute_vector, transmit_vector]
 
 
+# 请求重要因子
+request_rate = 0.5
+network_rate = 1 - request_rate
+
+
+# 更新重要因子
+def update_important_rate(new_rate):
+    global request_rate, network_rate
+    request_rate = new_rate
+    network_rate = 1 - new_rate
+
+
 # 请求路由函数
 # 先简化为所有节点同样概率发送
 def route(compute_vector: list, transmit_vector: list):
     route_vector = []
-    count = 0
+    importance_rate_vector = []
+    total = 0
     # 计算所有可达的节点数
-    for compute in compute_vector:
+    for index in range(len(compute_vector)):
+        compute = compute_vector[index]
+        transmit = transmit_vector[index]
         if compute != max_time:
-            count += 1
+            importance = request_rate * compute + network_rate * transmit
+            importance_rate_vector.append(importance)
+            total += importance
+        else:
+            importance_rate_vector.append(0)
     # 给所有节点附上概率
-    for compute in compute_vector:
+    for index in range(len(compute_vector)):
+        compute = compute_vector[index]
         if compute == max_time:
             route_vector.append(0)
         else:
-            route_vector.append(1 / count)
+            route_vector.append(importance_rate_vector[index] / total)
     return route_vector
 
 
 # 获取一个服务部署的所有节点的列表
 def get_nodes_of_a_service(service: int) -> list:
     node_vector = []
+    global instance
     for node in range(len(instance[service])):
         if instance[service, node] == 1:
             node_vector.append(node)
@@ -277,18 +317,131 @@ def node_capacity_constrains() -> bool:
     return True
 
 
-if __name__ == '__main__':
-    print(instance)
-    # print(get_nodes_of_a_service(2))
-    print(delta)
-    print(lambda_in)
-    print(request_arrive)
+# 更新进入的流量
+def update_lambda_in():
+    global lambda_in
+    lambda_in = delta * lambda_out
+
+
+# 成本约束，即所有治理手段的成本呢不能超过预定标准
+def cost_constrains() -> float:
+    # 计算实例部署成本
+    instance_cost = 0
+    for node in range(cols):
+        cpu, ram, disk = 0, 0, 0
+        for service in range(rows):
+            cpu += service_resource_occupancy[service, 0] * instance[service, node]
+            ram += service_resource_occupancy[service, 1] * instance[service, node]
+            disk += service_resource_occupancy[service, 2] * instance[service, node]
+        instance_cost += cpu * cpu_fee + ram * ram_fee + disk * disk_fee
+
+    # 计算流量调控成本
+    request_decline = sum(lambda_out) - sum(lambda_in)
+    request_cost = request_decline * app_fee
+
+    total_cost = instance_cost + request_cost
+    # print("instance_cost: ", instance_cost, "request_cost: ", request_cost, "total_cost: ", total_cost)
+    return compute_constrains(total_cost - max_fee)
+
+
+# 计算约束代价
+def compute_constrains(value):
+    if value < 0:
+        return 0
+    else:
+        return 50 * value
+
+
+# reward函数
+def get_reward(state):
+    instance_vector = state[0: rows * cols]
+    region = instance_vector.detach().numpy().reshape(rows, cols)
+    instance_punishment = 0.0
+    # for row in region:
+    #     row_sum = row.sum()
+    #     if row_sum < 2.5:
+    #         instance_punishment += 10000 * (2.5 - row_sum)
+    #     else:
+    #         instance_punishment += 0.0
+    instance_vector = (instance_vector * 2).to(torch.int).detach().numpy().reshape(rows, cols)
+    for row in instance_vector:
+        row_sum = row.sum()
+        if row_sum < 1:
+            instance_punishment += 500 * (1 - row_sum)
+        else:
+            instance_punishment += 0.0
+    global instance
+    instance = instance_vector
+    request_vector = state[rows * cols: rows * cols + len(start_service)].detach().numpy()
+    global delta
+    delta = request_vector
+    update_lambda_in()
+    route_vector = state[-1].flatten().detach().numpy()
+    global request_rate
+    request_rate = route_vector[0]
+    update_important_rate(request_rate)
+    # print("instance: ", instance)
+    # print("delta: ", delta)
+    # print("request_rate: ", request_rate)
+    global request_arrive
     request_arrive = update_request_arrive_array_matrix()
-    print(request_arrive)
-    print(get_service_queue_time(0))
-    print(compute_ability)
-    print(get_app_total_time(0))
-    print(get_app_total_time(3))
-    print(get_max_total_time())
-    print(instance_constrains())
-    print(node_capacity_constrains())
+    # print("max_total_time: ", get_max_total_time())
+    reward = get_max_total_time() + instance_punishment + cost_constrains()
+    # print("constraint: ", instance_constrains(), cost_constrains(), node_capacity_constrains())
+
+    return reward
+
+
+def heuristic_algorithm_fitness_function(state):
+    instance_vector = state[0: rows * cols].reshape(rows, cols)
+    instance_punishment = 0.0
+    for row in instance_vector:
+        row_sum = row.sum()
+        if row_sum < 1:
+            instance_punishment += 500 * (1 - row_sum)
+        else:
+            instance_punishment += 0.0
+    global instance
+    instance = instance_vector
+    request_vector = state[rows * cols: rows * cols + len(start_service)]
+    global delta
+    delta = request_vector
+    update_lambda_in()
+    route_vector = state[-1]
+    global request_rate
+    request_rate = route_vector
+    update_important_rate(request_rate)
+    global request_arrive
+    request_arrive = update_request_arrive_array_matrix()
+    # print("max_total_time: ", get_max_total_time())
+    # print("instance_punishment: ", instance_punishment)
+    # print("cost_constrains: ", cost_constrains())
+    reward = get_max_total_time() + instance_punishment + cost_constrains()
+
+    return reward
+
+
+if __name__ == '__main__':
+    td3 = net.TD3()
+    td3.train()
+
+    # flat = torch.tensor([0.2, 0.8])
+    # net = torch.load('actor.pkl')
+    # prediction = net(flat)
+    # print(prediction)
+    # print(get_reward(prediction))
+
+    # print(instance)
+    # print(delta)
+    # print(lambda_in)
+    # print(request_arrive)
+    # request_arrive = update_request_arrive_array_matrix()
+    # print(request_arrive)
+    # print(get_service_queue_time(0))
+    # print(compute_ability)
+    # print(get_app_total_time(0))
+    # print(get_app_total_time(3))
+    # print(get_max_total_time())
+    # print(instance_constrains())
+    # print(node_capacity_constrains())
+    # print(cost_constrains())
