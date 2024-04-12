@@ -1,8 +1,6 @@
 import numpy as np
-import pandas as pd
-from sko.GA import GA
-from sko.operators.crossover import crossover_2point
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
+from sko.DE import DE
 
 import main
 from main import heuristic_algorithm_fitness_function
@@ -19,24 +17,15 @@ if __name__ == '__main__':
     # print("max_iter", max_iter)
 
     # define GA
-    ga = GA(func=heuristic_algorithm_fitness_function,
+    de = DE(func=heuristic_algorithm_fitness_function,
             n_dim=len(lb),
             size_pop=n_particles,
             max_iter=max_iter,
-            precision=precision,
             lb=lb,
             ub=ub,
             )
-    ga.register(operator_name='crossover', operator=crossover_2point)
 
-    # iter
-    x_opt, y_opt = ga.run(max_iter=max_iter)
+    best_x, best_y = de.run()
+    print('best_x:', best_x, '\n', 'best_y:', best_y)
 
-    # show result
-    Y_history = pd.DataFrame(ga.all_history_Y)
-    fig, ax = plt.subplots(2, 1)
-    ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
-    Y_history.min(axis=1).cummin().plot(kind='line')
-    print(ga.best_y)
-    plt.show()
 

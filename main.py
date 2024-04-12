@@ -184,8 +184,8 @@ def get_service_queue_time(service: int):
 def get_service_transmit_time(service: int):
     mean_transmit_time = 0
     request_number = request_arrive[service, :].sum()
-    # if request_number == 0:
-    #     return 0
+    if request_number == 0:
+        return 0
 
     # 如果是起始微服务，无上游微服务
     for index in range(len(start_service)):
@@ -248,7 +248,6 @@ def update_important_rate(new_rate):
 
 
 # 请求路由函数
-# 先简化为所有节点同样概率发送
 def route(compute_vector: list, transmit_vector: list):
     route_vector = []
     importance_rate_vector = []
@@ -269,7 +268,10 @@ def route(compute_vector: list, transmit_vector: list):
         if compute == max_time:
             route_vector.append(0)
         else:
-            route_vector.append(importance_rate_vector[index] / total)
+            if total == 0:
+                route_vector.append(float(1))
+            else:
+                route_vector.append(importance_rate_vector[index] / total)
     return route_vector
 
 
@@ -393,7 +395,7 @@ def get_reward(state):
 
 
 def heuristic_algorithm_fitness_function(state):
-    instance_vector = state[0: rows * cols].reshape(rows, cols)
+    instance_vector = state[0: rows * cols].reshape(rows, cols).astype(int)
     instance_punishment = 0.0
     for row in instance_vector:
         row_sum = row.sum()
@@ -416,9 +418,17 @@ def heuristic_algorithm_fitness_function(state):
     # print("max_total_time: ", get_max_total_time())
     # print("instance_punishment: ", instance_punishment)
     # print("cost_constrains: ", cost_constrains())
-    reward = get_max_total_time() + instance_punishment + cost_constrains()
+    node_capacity_punishment = 0.0
+    if not node_capacity_constrains():
+        node_capacity_punishment = 500
+    reward = get_max_total_time() + instance_punishment + cost_constrains() + node_capacity_punishment
 
     return reward
+
+
+def test_heuristic_algorithm_fitness_function(state):
+    instance_vector = state[0: rows * cols].reshape(rows, cols).astype(int)
+    print("\ninstance_vector:\n", instance_vector)
 
 
 if __name__ == '__main__':
