@@ -34,9 +34,9 @@ if __name__ == '__main__':
 
     # show result
     Y_history = pd.DataFrame(ga.all_history_Y)
-    fig, ax = plt.subplots(2, 1)
-    ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
+    # fig, ax = plt.subplots(2, 1)
+    # ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
     Y_history.min(axis=1).cummin().plot(kind='line')
-    print(ga.best_y)
+    print("best_x:\n", ga.best_x, "\nbest_y:", ga.best_y)
     plt.show()
 

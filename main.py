@@ -4,16 +4,16 @@ import torch
 import net
 
 # 应用耗费成本
-app_fee = 100
+app_fee = 1000
 # cpu | ram | disk 单价
 cpu_fee = 1
 ram_fee = 0.1
 disk_fee = 0.01
 # 可接受的最大成本
-max_fee = 800
+max_fee = 8000
 # 应用请求次数
-app_1_request = 30
-app_2_request = 10
+app_1_request = 50
+app_2_request = 30
 # 行数rows为微服务数
 rows = 5
 # 列数cols为节点数
@@ -426,9 +426,26 @@ def heuristic_algorithm_fitness_function(state):
     return reward
 
 
-def test_heuristic_algorithm_fitness_function(state):
-    instance_vector = state[0: rows * cols].reshape(rows, cols).astype(int)
-    print("\ninstance_vector:\n", instance_vector)
+def reset():
+    instance_reset = torch.tensor(np.random.randint(2, size=(rows, cols))).flatten()
+    delta_reset = torch.tensor(np.random.rand(2))
+    request_rate_reset = torch.tensor(np.random.rand(1))
+    return torch.cat((instance_reset, delta_reset, request_rate_reset))
+
+
+def step(state, action):
+    state = state.detach().cpu().numpy()
+    # action = action.detach().cpu().numpy()
+    x = int((action[0]/2 + 0.5) * rows) % rows
+    y = int((action[1]/2 + 0.5) * cols) % cols
+    if action[2] > 0:
+        state[x * cols + y] = 1
+    else:
+        state[x * cols + y] = 0
+    state[rows * cols:] = action[3:]/2 + 0.5
+    reward = heuristic_algorithm_fitness_function(state)
+    state = torch.tensor(state)
+    return state, reward
 
 
 if __name__ == '__main__':
