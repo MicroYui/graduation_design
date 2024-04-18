@@ -1,8 +1,6 @@
 import numpy as np
 import torch
 
-import net
-
 # 应用耗费成本
 app_fee = 1000
 # cpu | ram | disk 单价
@@ -20,14 +18,14 @@ rows = 5
 cols = 5
 # 不可达时间
 max_time = 99999
+# 应用对应的微服务
+start_service = [0, 3]
 # 限流向量
-delta = np.random.rand(2)
+delta = np.random.rand(len(start_service))
 # 外部流量向量
 lambda_out = [app_1_request, app_2_request]
 # 实际进入流量
 lambda_in = delta * lambda_out
-# 应用对应的微服务
-start_service = [0, 3]
 # 接入点所在的节点
 access_node = [0, 3]
 # 一秒对应的毫秒数
@@ -428,8 +426,13 @@ def heuristic_algorithm_fitness_function(state):
 
 def reset():
     instance_reset = torch.tensor(np.random.randint(2, size=(rows, cols))).flatten()
-    delta_reset = torch.tensor(np.random.rand(2))
-    request_rate_reset = torch.tensor(np.random.rand(1))
+    # 版本1：使用精度非常高的随机数
+    # delta_reset = torch.tensor(np.random.rand(len(delta)))
+    # request_rate_reset = torch.tensor(np.random.rand(1))
+    # 版本2：使用指定精度的随机数
+    delta_reset = torch.tensor(np.around(np.random.rand(len(delta)), decimals=2))
+    request_rate_reset = torch.tensor(np.around(np.random.rand(1), decimals=2))
+
     return torch.cat((instance_reset, delta_reset, request_rate_reset))
 
 
@@ -442,15 +445,47 @@ def step(state, action):
         state[x * cols + y] = 1
     else:
         state[x * cols + y] = 0
-    state[rows * cols:] = action[3:]/2 + 0.5
+    # 版本1：action直接生成对应的数字
+    # state[rows * cols:] = action[3:]/2 + 0.5
+    # 版本2：action生成对应位置是否增减，精度为0.01
+    x = int((action[3] / 2 + 0.5) * len(delta)) % len(delta)
+    if action[4] > 0:
+        state[rows * cols + x] += 0.01
+    else:
+        state[rows * cols + x] -= 0.01
+    state[rows * cols + x] = np.clip(state[rows * cols + x], 0, 1)
+    if action[5] > 0:
+        state[-1] += 0.01
+    else:
+        state[-1] -= 0.01
+    state[-1] = np.clip(state[-1], 0, 1)
     reward = heuristic_algorithm_fitness_function(state)
     state = torch.tensor(state)
     return state, reward
 
 
 if __name__ == '__main__':
-    td3 = net.TD3()
-    td3.train()
+    # print(reset())
+    # td3 = net.TD3()
+    # td3.train()
+
+    actor = torch.load('new_actor_1000_100.pt', map_location=torch.device('cpu'))
+    min_state = reset()
+    min_reward = 999999
+    for _ in range(3332):
+        ori_state = reset()
+        ori_state = ori_state.float()
+        ori_reward = 0
+        for _ in range(66):
+            action = actor(ori_state)
+            # print(action)
+            # print(state)
+            ori_state, ori_reward = step(ori_state, action)
+        if min_reward > ori_reward:
+            min_reward = ori_reward
+            min_state = ori_state
+
+    print("state:\n", min_state, "\nreward:",  min_reward)
 
     # flat = torch.tensor([0.2, 0.8])
     # net = torch.load('actor.pkl')

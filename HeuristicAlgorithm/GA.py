@@ -38,5 +38,6 @@ if __name__ == '__main__':
     # ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
     Y_history.min(axis=1).cummin().plot(kind='line')
     print("best_x:\n", ga.best_x, "\nbest_y:", ga.best_y)
+    plt.savefig("GA.svg")
     plt.show()
 
