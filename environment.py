@@ -360,6 +360,7 @@ class Environment(object):
 
     def step(self, state, action):
         state = state.detach().cpu().numpy()
+        pre_state_fitness = self.heuristic_algorithm_fitness_function(state)
         # action = action.detach().cpu().numpy()
         x = int((action[0] / 2 + 0.5) * self.rows) % self.rows
         y = int((action[1] / 2 + 0.5) * self.cols) % self.cols
@@ -381,7 +382,8 @@ class Environment(object):
         else:
             state[-1] -= 0.01
         state[-1] = np.clip(state[-1], 0, 1)
-        reward = self.heuristic_algorithm_fitness_function(state)
+        state_fitness = self.heuristic_algorithm_fitness_function(state)
+        reward = pre_state_fitness - state_fitness
         state = torch.tensor(state)
         return state, reward
 

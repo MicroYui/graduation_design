@@ -1,12 +1,10 @@
 import numpy as np
 import torch
-import gym
 from tqdm import trange
 
 from TD3 import TD3
 import matplotlib.pyplot as plt
 import ReplayBuffer
-from torch.utils.tensorboard import SummaryWriter
 import main as env
 from environment import Environment
 
@@ -138,7 +136,7 @@ def main(seed, Max_episode, steps):
         #     modify_r = 500
         # else:
         #     modify_r = r
-        result_y.append(r)
+        result_y.append(ep_r)
         # if episode > 0:
         #     plt.plot(line, label="line" + str(episode))
         # line = []
@@ -146,10 +144,10 @@ def main(seed, Max_episode, steps):
 
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
-    plt.savefig(f"new_actor_{Max_episode}_{steps}_image.svg")
+    plt.savefig(f"new_reward_{Max_episode}_{steps}_image.svg")
     # plt.show()
-    torch.save(model.actor, f"new_actor_{Max_episode}_{steps}.pt")
+    torch.save(model.actor, f"new_reward_{Max_episode}_{steps}.pt")
 
 
 if __name__ == '__main__':
-    main(1, 500, 100)
+    main(1, 1000, 150)
