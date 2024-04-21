@@ -383,7 +383,8 @@ class Environment(object):
             state[-1] -= 0.01
         state[-1] = np.clip(state[-1], 0, 1)
         state_fitness = self.heuristic_algorithm_fitness_function(state)
-        reward = pre_state_fitness - state_fitness
+        reward = state_fitness - pre_state_fitness
+        # reward = self.heuristic_algorithm_fitness_function(state)
         state = torch.tensor(state)
         return state, reward
 
@@ -400,77 +401,14 @@ class Environment(object):
         show_action.append(action[5])
         print(show_action)
 
-# if __name__ == '__main__':
-#     app_fee = 1000
-#     cpu_fee = 1
-#     ram_fee = 0.1
-#     disk_fee = 0.01
-#     max_fee = 8000
-#     app_1_request = 50
-#     app_2_request = 30
-#     rows = 5
-#     cols = 5
-#     max_time = 99999
-#     start_service = [0, 3]
-#     delta = np.random.rand(len(start_service))
-#     lambda_out = [app_1_request, app_2_request]
-#     lambda_in = delta * lambda_out
-#     access_node = [0, 3]
-#     second = 1000
-#     service_resource_occupancy = np.array([
-#         [2.0, 512, 50],
-#         [1.0, 256, 40],
-#         [1.0, 380, 120],
-#         [0.5, 128, 20],
-#         [1.5, 420, 70],
-#     ])
-#     node_resource_capacity = np.array([
-#         [16, 2048, 2048],
-#         [10, 2048, 2048],
-#         [7, 2048, 2048],
-#         [4, 1024, 2048],
-#         [12, 2048, 2048],
-#     ])
-#     instance = np.random.randint(2, size=(rows, cols))
-#     service_dependency = np.array([
-#         [0, 1, 0, 0, 0],
-#         [0, 0, 1, 0, 0],
-#         [0, 0, 0, 0, 0],
-#         [0, 0, 0, 0, 1],
-#         [0, 1, 0, 0, 0]
-#     ])
-#     net_delay = np.array([
-#         [0, 10, 25, 20, 50],
-#         [10, 0, 15, 20, 50],
-#         [25, 15, 0, 5, 35],
-#         [20, 20, 5, 0, 30],
-#         [50, 50, 35, 30, 0]
-#     ])
-#     compute_time = np.array([
-#         [12, 10, 8, 6, 4],
-#         [28, 28 / 6 * 5, 28 / 3 * 2, 28 / 2, 28 / 3],
-#         [17, 17 / 6 * 5, 17 / 3 * 2, 17 / 2, 17 / 3],
-#         [9, 9 / 6 * 5, 9 / 3 * 2, 9 / 2, 9 / 3],
-#         [78, 78 / 6 * 5, 78 / 3 * 2, 78 / 2, 78 / 3]
-#     ])
-#     compute_ability = second / np.array(compute_time)
-#     request_arrive = np.zeros((rows, cols))
-#
-#     environment = Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
-#                               start_service, access_node, service_resource_occupancy, node_resource_capacity,
-#                               instance, service_dependency, net_delay, compute_time)
-#
-#     print(environment.instance)
-#     print(environment.delta)
-#     print(environment.lambda_in)
-#     print(environment.request_arrive)
-#     environment.request_arrive = environment.update_request_arrive_array_matrix()
-#     print(environment.request_arrive)
-#     print(environment.get_service_queue_time(0))
-#     print(compute_ability)
-#     print(environment.get_app_total_time(0))
-#     print(environment.get_app_total_time(3))
-#     print(environment.get_max_total_time())
-#     print(environment.instance_constrains())
-#     print(environment.node_capacity_constrains())
-#     print(environment.cost_constrains())
+    def update_state(self, state):
+        state = state.detach().cpu().numpy()
+        instance_vector = state[0: self.rows * self.cols].reshape(self.rows, self.cols).astype(int)
+        self.instance = instance_vector
+        request_vector = state[self.rows * self.cols: self.rows * self.cols + len(self.start_service)]
+        self.delta = request_vector
+        self.update_lambda_in()
+        route_vector = state[-1]
+        self.request_rate = route_vector
+        self.update_important_rate(self.request_rate)
+        self.request_arrive = self.update_request_arrive_array_matrix()

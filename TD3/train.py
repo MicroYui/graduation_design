@@ -99,12 +99,28 @@ def main(seed, Max_episode, steps):
     result_y = []
     # state_vector = []
     # line = []
+    environment = Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
+                              start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                              instance, service_dependency, net_delay, compute_time)
+    state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+                          0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9900, 0.8300,
+                          0.7000])
+    # environment.update_state(state)
+    # while True:
+    #     if not environment.instance_constrains() or not environment.node_capacity_constrains() or \
+    #             environment.cost_constrains() > 0:
+    #         state = environment.reset()
+    #         environment.update_state(state)
+    #     else:
+    #         break
+
+    reward = 999999
+    # print("original state:\n", state)
 
     for episode in trange(Max_episode):
-        environment = Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
-                                  start_service, access_node, service_resource_occupancy, node_resource_capacity,
-                                  instance, service_dependency, net_delay, compute_time)
-        s = environment.reset()
+        s = state
+        # s = environment.reset()
         done = False
         ep_r = 0
         # steps = 200
@@ -124,30 +140,20 @@ def main(seed, Max_episode, steps):
             s = s_prime
             ep_r += r
 
-            # environment.show_action(a)
-            # print(ep_r)
-            # print("-----------------------")
-            # print(f"episode:{episode}\ns:\n", s)
-            # if episode > 0:
-            #     line.append(r)
-            # result_y.append(r)
-        # modify_r = 0
-        # if r > 500:
-        #     modify_r = 500
-        # else:
-        #     modify_r = r
         result_y.append(ep_r)
-        # if episode > 0:
-        #     plt.plot(line, label="line" + str(episode))
-        # line = []
-        # state_vector.append(s)
+        # new_reward = environment.heuristic_algorithm_fitness_function(s.detach().cpu().numpy())
+        # if new_reward < reward:
+        #     reward = new_reward
+        #     state = s
 
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
-    plt.savefig(f"new_reward_{Max_episode}_{steps}_image.svg")
+    plt.savefig(f"image/not_reset_new_reward_{Max_episode}_{steps}_image.svg")
     # plt.show()
-    torch.save(model.actor, f"new_reward_{Max_episode}_{steps}.pt")
+    torch.save(model.actor, f"model/not_reset_new_reward_{Max_episode}_{steps}.pt")
+    # print("state:\n", state)
+    # print("reward: ", reward)
 
 
 if __name__ == '__main__':
-    main(1, 1000, 150)
+    main(1, 3000, 500)
