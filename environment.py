@@ -65,8 +65,15 @@ class Environment(object):
         current_service = first_service
         while np.array_equal(self.service_dependency[current_service, :], np.zeros(self.rows)) is False:
             next_service = np.where(self.service_dependency[current_service, :] == 1)[0][0]
-            total_time += self.get_service_queue_time(current_service) + self.get_service_transmit_time(current_service)
+            total_time += (
+                    self.get_service_queue_time(current_service) + self.get_service_transmit_time(current_service))
+            # print("service:", current_service, "queue_time:", self.get_service_queue_time(current_service),
+            #       "transmit_time:", self.get_service_transmit_time(current_service))
+            print(f"service{current_service}: ", total_time)
             current_service = next_service
+        total_time += (self.get_service_queue_time(current_service) + self.get_service_transmit_time(current_service))
+        # print("service:", current_service, "queue_time:", self.get_service_queue_time(current_service),
+        #       "transmit_time:", self.get_service_transmit_time(current_service))
         return total_time
 
     # 计算所有链路中最大时间
@@ -76,7 +83,7 @@ class Environment(object):
         #     return max_time
         for app in self.start_service:
             total_time = self.get_app_total_time(app)
-            # print("total_time: ", total_time)
+            print("total_time: ", total_time)
             max_total_time = max(max_total_time, total_time)
         return max_total_time
 
@@ -136,7 +143,33 @@ class Environment(object):
                             self.compute_ability[service, node] - self.request_arrive[service, node])
                 else:
                     mean_queue_time = self.max_time
-        return mean_queue_time
+        return mean_queue_time * 1000
+
+    # 计算一个服务是否不满足排队论约束
+    def service_queue_constrains(self, service: int) -> bool:
+        for node in range(len(self.request_arrive[service, :])):
+            request = self.request_arrive[service, node]
+            if request != 0.0:
+                # 如果服务到达率 > 服务完成率，则排队时间无限长
+                if self.compute_ability[service, node] <= self.request_arrive[service, node]:
+                    return False
+        return True
+
+    # 计算是否有不满足排队论约束
+    def queue_constrains(self) -> bool:
+        for app in self.start_service:
+            # print("app: ", app)
+            current_service = app
+            while np.array_equal(self.service_dependency[current_service, :], np.zeros(self.rows)) is False:
+                next_service = np.where(self.service_dependency[current_service, :] == 1)[0][0]
+                # print("service:", current_service, "queue_time:", self.get_service_queue_time(current_service))
+                if self.get_service_queue_time(current_service) >= self.max_time * self.second:
+                    return False
+                current_service = next_service
+            # print("service:", current_service, "queue_time:", self.get_service_queue_time(current_service))
+            if self.get_service_queue_time(current_service) >= self.max_time * self.second:
+                return False
+        return True
 
     # 计算一个微服务的加权传输时间
     def get_service_transmit_time(self, service: int):
@@ -266,7 +299,7 @@ class Environment(object):
         self.lambda_in = self.delta * self.lambda_out
 
     # 成本约束，即所有治理手段的成本呢不能超过预定标准
-    def cost_constrains(self) -> float:
+    def cost_constrains(self) -> bool:
         # 计算实例部署成本
         instance_cost = 0
         for node in range(self.cols):
@@ -283,7 +316,8 @@ class Environment(object):
 
         total_cost = instance_cost + request_cost
         # print("instance_cost: ", instance_cost, "request_cost: ", request_cost, "total_cost: ", total_cost)
-        return compute_constrains(total_cost - self.max_fee)
+        # return compute_constrains(total_cost - self.max_fee)
+        return total_cost <= self.max_fee
 
     # reward函数
     def get_reward(self, state):
@@ -322,13 +356,13 @@ class Environment(object):
 
     def heuristic_algorithm_fitness_function(self, state):
         instance_vector = state[0: self.rows * self.cols].reshape(self.rows, self.cols).astype(int)
-        instance_punishment = 0.0
-        for row in instance_vector:
-            row_sum = row.sum()
-            if row_sum < 1:
-                instance_punishment += 100 * (1 - row_sum)
-            else:
-                instance_punishment += 0.0
+        # instance_punishment = 0.0
+        # for row in instance_vector:
+        #     row_sum = row.sum()
+        #     if row_sum < 1:
+        #         instance_punishment += 100 * (1 - row_sum)
+        #     else:
+        #         instance_punishment += 0.0
         self.instance = instance_vector
         request_vector = state[self.rows * self.cols: self.rows * self.cols + len(self.start_service)]
         self.delta = request_vector
@@ -337,13 +371,14 @@ class Environment(object):
         self.request_rate = route_vector
         self.update_important_rate(self.request_rate)
         self.request_arrive = self.update_request_arrive_array_matrix()
-        # print("max_total_time: ", get_max_total_time())
-        # print("instance_punishment: ", instance_punishment)
-        # print("cost_constrains: ", cost_constrains())
-        node_capacity_punishment = 0.0
-        if not self.node_capacity_constrains():
-            node_capacity_punishment = 500
-        reward = self.get_max_total_time() + instance_punishment + self.cost_constrains() + node_capacity_punishment
+        # node_capacity_punishment = 0.0
+        # if not self.node_capacity_constrains():
+        #     node_capacity_punishment = 500
+        # reward = self.get_max_total_time() + instance_punishment + self.cost_constrains() + node_capacity_punishment
+        reward = self.get_max_total_time()
+        # if not self.cost_constrains() or not self.instance_constrains() \
+        #         or not self.node_capacity_constrains() or not self.queue_constrains():
+        #     print("不满足约束")
 
         return reward
 
@@ -359,34 +394,51 @@ class Environment(object):
         return torch.cat((instance_reset, delta_reset, request_rate_reset))
 
     def step(self, state, action):
-        state = state.detach().cpu().numpy()
-        pre_state_fitness = self.heuristic_algorithm_fitness_function(state)
+        dead = False
+        reward = 0
+        pre_state = state.detach().cpu().numpy()
+        pre_state_fitness = self.heuristic_algorithm_fitness_function(pre_state)
+        # pre_constrains = not self.cost_constrains() or not self.instance_constrains() or not \
+        #     self.node_capacity_constrains() or not self.queue_constrains()
         # action = action.detach().cpu().numpy()
         x = int((action[0] / 2 + 0.5) * self.rows) % self.rows
         y = int((action[1] / 2 + 0.5) * self.cols) % self.cols
         if action[2] > 0:
-            state[x * self.cols + y] = 1
+            pre_state[x * self.cols + y] = 1
         else:
-            state[x * self.cols + y] = 0
+            pre_state[x * self.cols + y] = 0
         # 版本1：action直接生成对应的数字
         # state[rows * cols:] = action[3:]/2 + 0.5
         # 版本2：action生成对应位置是否增减，精度为0.01
         x = int((action[3] / 2 + 0.5) * len(self.delta)) % len(self.delta)
         if action[4] > 0:
-            state[self.rows * self.cols + x] += 0.01
+            pre_state[self.rows * self.cols + x] += 0.01
         else:
-            state[self.rows * self.cols + x] -= 0.01
-        state[self.rows * self.cols + x] = np.clip(state[self.rows * self.cols + x], 0, 1)
+            pre_state[self.rows * self.cols + x] -= 0.01
+        pre_state[self.rows * self.cols + x] = np.clip(pre_state[self.rows * self.cols + x], 0, 1)
         if action[5] > 0:
-            state[-1] += 0.01
+            pre_state[-1] += 0.01
         else:
-            state[-1] -= 0.01
-        state[-1] = np.clip(state[-1], 0, 1)
-        state_fitness = self.heuristic_algorithm_fitness_function(state)
-        reward = state_fitness - pre_state_fitness
+            pre_state[-1] -= 0.01
+        pre_state[-1] = np.clip(pre_state[-1], 0, 1)
+        state_fitness = self.heuristic_algorithm_fitness_function(pre_state)
+        # constrains = not self.cost_constrains() or not self.instance_constrains() or not \
+        #     self.node_capacity_constrains() or not self.queue_constrains()
+        # if constrains:
+        #     reward = -1
+        # elif pre_constrains:
+        #     reward = 0
+        if not self.cost_constrains() or not self.instance_constrains() or not \
+                self.node_capacity_constrains() or not self.queue_constrains():
+            # print("不满足约束")
+            reward = 0
+            dead = True
+        else:
+            reward = pre_state_fitness - state_fitness
+        # print("pre_state_fitness: ", pre_state_fitness, "state_fitness: ", state_fitness, "reward: ", reward)
         # reward = self.heuristic_algorithm_fitness_function(state)
-        state = torch.tensor(state)
-        return state, reward
+        pre_state = torch.tensor(pre_state)
+        return pre_state, reward, dead
 
     # 解析action
     def show_action(self, action):
@@ -402,13 +454,13 @@ class Environment(object):
         print(show_action)
 
     def update_state(self, state):
-        state = state.detach().cpu().numpy()
-        instance_vector = state[0: self.rows * self.cols].reshape(self.rows, self.cols).astype(int)
+        pre_state = state.detach().cpu().numpy()
+        instance_vector = pre_state[0: self.rows * self.cols].reshape(self.rows, self.cols).astype(int)
         self.instance = instance_vector
-        request_vector = state[self.rows * self.cols: self.rows * self.cols + len(self.start_service)]
+        request_vector = pre_state[self.rows * self.cols: self.rows * self.cols + len(self.start_service)]
         self.delta = request_vector
         self.update_lambda_in()
-        route_vector = state[-1]
+        route_vector = pre_state[-1]
         self.request_rate = route_vector
         self.update_important_rate(self.request_rate)
         self.request_arrive = self.update_request_arrive_array_matrix()

@@ -6,6 +6,7 @@ from TD3 import TD3
 import matplotlib.pyplot as plt
 import ReplayBuffer
 import main as env
+from new_environment import DRL_Environment
 from environment import Environment
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -49,11 +50,11 @@ service_dependency = np.array([
     [0, 1, 0, 0, 0]
 ])
 net_delay = np.array([
-    [0, 10, 25, 20, 50],
-    [10, 0, 15, 20, 50],
-    [25, 15, 0, 5, 35],
-    [20, 20, 5, 0, 30],
-    [50, 50, 35, 30, 0]
+    [1, 10, 25, 20, 50],
+    [10, 1, 15, 20, 50],
+    [25, 15, 1, 5, 35],
+    [20, 20, 5, 1, 30],
+    [50, 50, 35, 30, 1]
 ])
 compute_time = np.array([
     [12, 10, 8, 6, 4],
@@ -99,9 +100,9 @@ def main(seed, Max_episode, steps):
     result_y = []
     # state_vector = []
     # line = []
-    environment = Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
-                              start_service, access_node, service_resource_occupancy, node_resource_capacity,
-                              instance, service_dependency, net_delay, compute_time)
+    environment = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
+                                  start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                  instance, service_dependency, net_delay, compute_time)
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
                           1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9900, 0.8300,
@@ -116,23 +117,28 @@ def main(seed, Max_episode, steps):
     #         break
 
     reward = 999999
-    # print("original state:\n", state)
 
     for episode in trange(Max_episode):
-        s = state
-        # s = environment.reset()
+        s = state.clone()
+        environment.update_state(s)
         done = False
         ep_r = 0
-        # steps = 200
-        expl_noise *= 0.999
-        r = 0
+        expl_noise *= 0.99
+        r = 1000
         '''Interact & train'''
         for step in range(steps):
             a = (model.select_action(s) + np.random.normal(0, max_action * expl_noise, size=action_dim)
                  ).clip(-max_action, max_action)
-            s_prime, r = environment.step(s, a)
+            pre_s = s.clone()
+            s_prime, r, done = environment.step(s, a)
 
-            replay_buffer.add(s, a, r, s_prime, False)
+            replay_buffer.add(s, a, r, s_prime, done)
+            if done:
+                s_prime = pre_s
+                environment.update_state(s_prime)
+                # print("done")
+                # result_y.append(pre_r)
+                # break
 
             if replay_buffer.size > 1000:
                 model.train(replay_buffer)
@@ -148,12 +154,12 @@ def main(seed, Max_episode, steps):
 
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
-    plt.savefig(f"image/not_reset_new_reward_{Max_episode}_{steps}_image.svg")
+    plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
     # plt.show()
-    torch.save(model.actor, f"model/not_reset_new_reward_{Max_episode}_{steps}.pt")
+    torch.save(model.actor, f"model/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
 
 if __name__ == '__main__':
-    main(1, 3000, 500)
+    main(1, 500, 150)

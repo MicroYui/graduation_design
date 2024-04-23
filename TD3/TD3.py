@@ -131,7 +131,7 @@ class TD3(object):
 
         if self.delay_counter == self.delay_freq:
             # Update Actor
-            a_loss = self.q_critic.Q1(s, self.actor(s)).mean()
+            a_loss = -self.q_critic.Q1(s, self.actor(s)).mean()
             self.actor_optimizer.zero_grad()
             a_loss.backward()
             self.actor_optimizer.step()
