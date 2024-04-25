@@ -1,7 +1,7 @@
 import numpy as np
 from new_environment import DRL_Environment
 
-app_fee = 1000
+app_fee = 200
 cpu_fee = 1
 ram_fee = 0.1
 disk_fee = 0.01

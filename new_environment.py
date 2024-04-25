@@ -2,6 +2,10 @@ import numpy as np
 import torch
 
 
+def clamp(n, minn, maxn):
+    return max(min(maxn, n), minn)
+
+
 class DRL_Environment(object):
     def __init__(self, app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes,
                  max_time, request_out, start_service, access_node, service_resource_occupancy,
@@ -229,6 +233,8 @@ class DRL_Environment(object):
             total_time = self.get_app_total_time(app)
             # print("total_time: ", total_time)
             max_total_time = max(max_total_time, total_time)
+        # if max_total_time > 1000:
+        #     self.constrains = False
         return max_total_time
 
     def update_state(self, state):
@@ -259,13 +265,13 @@ class DRL_Environment(object):
             state = torch.cat((instance_reset, delta_reset, request_rate_reset))
 
             self.update_state(state)
-            if self.check_constrains():
+            if self.constrains:
                 return state
 
     def get_reward(self):
         return self.get_max_total_time()
 
-    def step(self, state, action):
+    def step(self, state, action, ori_reward):
         dead = False
         self.update_state(state)
         pre_state_fitness = self.get_reward()
@@ -288,12 +294,15 @@ class DRL_Environment(object):
         state[-1] = np.clip(state[-1], 0, 1)
         self.update_state(state)
         state_fitness = self.get_reward()
-        reward = pre_state_fitness - state_fitness
+        # reward = pre_state_fitness - state_fitness
+        reward = ori_reward - state_fitness
+        reward = clamp(reward, -300, 300)
         # reward = state_fitness
+        # reward = clamp(reward, -1000, 1000)
         # print("pre_state_fitness: ", pre_state_fitness, "state_fitness: ", state_fitness, "reward: ", reward)
         # print("state: \n", state)
-        if not self.constrains:
-            reward = 0
+        if not self.check_constrains():
+            reward = -300
             dead = True
         return state, reward, dead
 

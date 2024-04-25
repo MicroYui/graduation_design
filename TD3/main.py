@@ -1,9 +1,11 @@
 import numpy as np
 import torch
-import TD3.TD3
+
+from environment import Environment
+from new_environment import DRL_Environment
 
 # 应用耗费成本
-app_fee = 1000
+app_fee = 200
 # cpu | ram | disk 单价
 cpu_fee = 1
 ram_fee = 0.1
@@ -18,7 +20,7 @@ rows = 5
 # 列数cols为节点数
 cols = 5
 # 不可达时间
-max_time = 99999
+max_time = 999
 # 应用对应的微服务
 start_service = [0, 3]
 # 限流向量
@@ -69,11 +71,11 @@ service_dependency = np.array([
 # 2 --5-- 3
 # 3 --30-- 4
 net_delay = np.array([
-    [0, 10, 25, 20, 50],
-    [10, 0, 15, 20, 50],
-    [25, 15, 0, 5, 35],
-    [20, 20, 5, 0, 30],
-    [50, 50, 35, 30, 0]
+    [1, 10, 25, 20, 50],
+    [10, 1, 15, 20, 50],
+    [25, 15, 1, 5, 35],
+    [20, 20, 5, 1, 30],
+    [50, 50, 35, 30, 1]
 ])
 
 # 节点处理微服务时间矩阵
@@ -176,7 +178,7 @@ def get_service_queue_time(service: int):
                         compute_ability[service, node] - request_arrive[service, node])
             else:
                 mean_queue_time = max_time
-    return mean_queue_time * 1000
+    return mean_queue_time
 
 
 # 计算一个微服务的加权传输时间
@@ -324,7 +326,7 @@ def update_lambda_in():
     lambda_in = delta * lambda_out
 
 
-# 成本约束，即所有治理手段的成本呢不能超过预定标准
+# 成本约束，即所有治理手段的成本不能超过预定标准
 def cost_constrains() -> float:
     # 计算实例部署成本
     instance_cost = 0
@@ -350,7 +352,7 @@ def compute_constrains(value):
     if value < 0:
         return 0
     else:
-        return 50 * value
+        return 0.05 * value
 
 
 # reward函数
@@ -421,6 +423,7 @@ def heuristic_algorithm_fitness_function(state):
     if not node_capacity_constrains():
         node_capacity_punishment = 500
     reward = get_max_total_time() + instance_punishment + cost_constrains() + node_capacity_punishment
+    # print(get_max_total_time(), instance_punishment, cost_constrains(), node_capacity_punishment)
 
     return reward
 
@@ -466,51 +469,57 @@ def step(state, action):
 
 
 if __name__ == '__main__':
-    # print(reset())
-    # td3 = net.TD3()
-    # td3.train()
 
-    actor = torch.load('TD3/model/not_reset_new_reward_100_100.pt', map_location=torch.device('cpu'))
-    print(actor)
+    actor = torch.load('2024-04-25/a0000005c005.pt', map_location=torch.device('cpu'))
+    # print(actor)
+    environment = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
+                                  start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                  instance, service_dependency, net_delay, compute_time)
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9900, 0.8300,
-                          0.7000]).detach().cpu().numpy()
-    print(heuristic_algorithm_fitness_function(state))
-    min_state = state
-    min_reward = 999999
-    for _ in range(100):
-        ori_state = reset()
-        ori_state = ori_state.float()
-        ori_reward = 0
-        for _ in range(100):
-            action = actor(ori_state)
-            # print(action)
-            # print(state)
-            ori_state, ori_reward = step(ori_state, action)
-        if min_reward > ori_reward:
-            min_reward = ori_reward
-            min_state = ori_state
+                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
+                          0.7000])
+    # state = state.detach().cpu().numpy()
+    # state = np.array([1, 0, 0, 0, 0, 1,
+    #                   1, 0, 1, 0, 0, 0,
+    #                   1, 0, 0, 0, 0, 0,
+    #                   1, 0, 0, 0, 0, 1,
+    #                   0, 0.99, 0.74, 0.99])
+    environment.update_state(state)
+    ori_reward = environment.get_reward()
+    print(environment.get_reward())
+
+    # print(environment.heuristic_algorithm_fitness_function(state))
+    # print(environment.request_arrive)
+
+    # print(environment.request_arrive)
+    # print(state)
+    s = state
+    environment.update_state(s)
+    for i in range(100):
+        action = actor(s)
+        s, _, dead = environment.step(s, action, ori_reward)
+        print(state)
+        environment.update_state(s)
+        print("reward: ", environment.get_reward())
+        if dead:
+            # print("dead")
+            break
+        print("---------------------")
+
+    # min_state = reset()
+    # min_reward = 999999
+    # for _ in range(100):
+    #     ori_state = reset()
+    #     ori_state = ori_state.float()
+    #     ori_reward = 0
+    #     for _ in range(100):
+    #         action = actor(ori_state)
+    #         # print(action)
+    #         # print(state)
+    #         ori_state, ori_reward = step(ori_state, action)
+    #     if min_reward > ori_reward:
+    #         min_reward = ori_reward
+    #         min_state = ori_state
     #
-    print("state:\n", min_state, "\nreward:", min_reward)
-
-    # flat = torch.tensor([0.2, 0.8])
-    # net = torch.load('actor.pkl')
-    # prediction = net(flat)
-    # print(prediction)
-    # print(get_reward(prediction))
-
-    # print(instance)
-    # print(delta)
-    # print(lambda_in)
-    # print(request_arrive)
-    # request_arrive = update_request_arrive_array_matrix()
-    # print(request_arrive)
-    # print(get_service_queue_time(0))
-    # print(compute_ability)
-    # print(get_app_total_time(0))
-    # print(get_app_total_time(3))
-    # print(get_max_total_time())
-    # print(instance_constrains())
-    # print(node_capacity_constrains())
-    # print(cost_constrains())
+    # print("state:\n", min_state, "\nreward:", min_reward)

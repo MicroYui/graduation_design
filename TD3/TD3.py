@@ -89,7 +89,9 @@ class TD3(object):
         self.gamma = gamma
         self.policy_noise = 0.2 * max_action
         self.noise_clip = 0.5 * max_action
-        self.tau = 0.005
+        self.critic_tau = 0.0005
+        self.actor_tau = 0.0000005
+        # self.tau = 0.00005
         self.Q_batchsize = Q_batchsize
         self.delay_counter = -1
         self.delay_freq = 1
@@ -138,9 +140,9 @@ class TD3(object):
 
             # Update the frozen target models
             for param, target_param in zip(self.q_critic.parameters(), self.q_critic_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+                target_param.data.copy_(self.critic_tau * param.data + (1 - self.critic_tau) * target_param.data)
 
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+                target_param.data.copy_(self.actor_tau * param.data + (1 - self.actor_tau) * target_param.data)
 
             self.delay_counter = -1

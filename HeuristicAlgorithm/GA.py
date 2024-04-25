@@ -5,13 +5,13 @@ from sko.operators.crossover import crossover_2point
 import matplotlib.pyplot as plt
 
 import main
-from TD3.scale_min import environment_min
+from TD3.scale_min import environment_min as environment
 
 if __name__ == '__main__':
     # init
-    ub = [1] * (environment_min.services * environment_min.nodes + len(environment_min.start_service) + 1)
-    lb = [0] * (environment_min.services * environment_min.nodes + len(environment_min.start_service) + 1)
-    precision = [1] * (environment_min.services * environment_min.nodes) + [1e-7] * (len(environment_min.start_service) + 1)
+    ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
+    lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
+    precision = [1] * (environment.services * environment.nodes) + [1e-7] * (len(environment.start_service) + 1)
     n_particles = int(1000 * np.log(len(lb)))
     n_particles = n_particles + n_particles % 2
     # print("n_particles", n_particles)
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # print("max_iter", max_iter)
 
     # define GA
-    ga = GA(func=environment_min.heuristic_algorithm_fitness_function,
+    ga = GA(func=environment.heuristic_algorithm_fitness_function,
             n_dim=len(lb),
             size_pop=n_particles,
             max_iter=max_iter,

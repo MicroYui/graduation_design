@@ -2,73 +2,20 @@ import numpy as np
 import torch
 from tqdm import trange
 
+import new_environment
 from TD3 import TD3
 import matplotlib.pyplot as plt
 import ReplayBuffer
 import main as env
 from new_environment import DRL_Environment
 from environment import Environment
+from scale_min import environment_min
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-app_fee = 1000
-cpu_fee = 1
-ram_fee = 0.1
-disk_fee = 0.01
-max_fee = 8000
-app_1_request = 50
-app_2_request = 30
-rows = 5
-cols = 5
-max_time = 999
-start_service = [0, 3]
-delta = np.random.rand(len(start_service))
-lambda_out = [app_1_request, app_2_request]
-lambda_in = delta * lambda_out
-access_node = [0, 3]
-second = 1000
-service_resource_occupancy = np.array([
-    [2.0, 512, 50],
-    [1.0, 256, 40],
-    [1.0, 380, 120],
-    [0.5, 128, 20],
-    [1.5, 420, 70],
-])
-node_resource_capacity = np.array([
-    [16, 2048, 2048],
-    [10, 2048, 2048],
-    [7, 2048, 2048],
-    [4, 1024, 2048],
-    [12, 2048, 2048],
-])
-instance = np.random.randint(2, size=(rows, cols))
-service_dependency = np.array([
-    [0, 1, 0, 0, 0],
-    [0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1],
-    [0, 1, 0, 0, 0]
-])
-net_delay = np.array([
-    [1, 10, 25, 20, 50],
-    [10, 1, 15, 20, 50],
-    [25, 15, 1, 5, 35],
-    [20, 20, 5, 1, 30],
-    [50, 50, 35, 30, 1]
-])
-compute_time = np.array([
-    [12, 10, 8, 6, 4],
-    [28, 28 / 6 * 5, 28 / 3 * 2, 28 / 2, 28 / 3],
-    [17, 17 / 6 * 5, 17 / 3 * 2, 17 / 2, 17 / 3],
-    [9, 9 / 6 * 5, 9 / 3 * 2, 9 / 2, 9 / 3],
-    [78, 78 / 6 * 5, 78 / 3 * 2, 78 / 2, 78 / 3]
-])
-compute_ability = second / np.array(compute_time)
-request_arrive = np.zeros((rows, cols))
-
 
 def main(seed, Max_episode, steps):
-    env_with_Dead = False
+    env_with_Dead = True
     state_dim = env.rows * env.cols + len(env.start_service) + 1
     # action_dim = 3 + len(env.start_service) + 1
     action_dim = 3 + 2 + 1  # 3：在x,y坐标上是否放置服务，2：在x索引的服务上增减网关因子，1：增减重要因子
@@ -91,21 +38,19 @@ def main(seed, Max_episode, steps):
         "max_action": max_action,
         "gamma": 0.99,
         "net_width": 200,
-        "a_lr": 1e-4,
-        "c_lr": 1e-4,
-        "Q_batchsize": 256,
+        "a_lr": 1e-5,
+        "c_lr": 1e-5,
+        "Q_batchsize": 600,
     }
     model = TD3(**kwargs)
     replay_buffer = ReplayBuffer.ReplayBuffer(state_dim, action_dim, max_size=int(1e6))
     result_y = []
     # state_vector = []
     # line = []
-    environment = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
-                                  start_service, access_node, service_resource_occupancy, node_resource_capacity,
-                                  instance, service_dependency, net_delay, compute_time)
+    environment = environment_min
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9900, 0.8300,
+                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
                           0.7000])
     # environment.update_state(state)
     # while True:
@@ -116,29 +61,39 @@ def main(seed, Max_episode, steps):
     #     else:
     #         break
 
-    reward = 999999
+    environment.update_state(state)
+    ori_reward = environment.get_reward()
 
     for episode in trange(Max_episode):
         s = state.clone()
+        # s = environment.constrains_reset()
         environment.update_state(s)
         done = False
         ep_r = 0
-        expl_noise *= 0.99
-        r = 1000
+        max_reward = -99999
+        expl_noise *= 0.999
+        r = 0
         '''Interact & train'''
         for step in range(steps):
+            # print(f"episode: {episode}, step: {step}")
             a = (model.select_action(s) + np.random.normal(0, max_action * expl_noise, size=action_dim)
                  ).clip(-max_action, max_action)
             pre_s = s.clone()
-            s_prime, r, done = environment.step(s, a)
+            s_prime, r, done = environment.step(s, a, ori_reward)
+            max_reward = max(max_reward, r)
 
             replay_buffer.add(s, a, r, s_prime, done)
             if done:
-                s_prime = pre_s
-                environment.update_state(s_prime)
+                # s_prime = pre_s
+
+                # environment.update_state(pre_s)
+                # pre_r = ori_reward - environment.get_reward()
+                # pre_r = new_environment.clamp(pre_r, -500, 500)
+                result_y.append(max_reward)
+                break
+
                 # print("done")
-                # result_y.append(pre_r)
-                # break
+                # print(s_prime)
 
             if replay_buffer.size > 1000:
                 model.train(replay_buffer)
@@ -146,7 +101,8 @@ def main(seed, Max_episode, steps):
             s = s_prime
             ep_r += r
 
-        result_y.append(ep_r)
+        if not done:
+            result_y.append(max_reward)
         # new_reward = environment.heuristic_algorithm_fitness_function(s.detach().cpu().numpy())
         # if new_reward < reward:
         #     reward = new_reward
@@ -154,12 +110,13 @@ def main(seed, Max_episode, steps):
 
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
-    plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
+    # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
+    plt.savefig(f"2024-04-25/a0000005c0005.svg")
     # plt.show()
-    torch.save(model.actor, f"model/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.pt")
+    torch.save(model.actor, f"2024-04-25/a0000005c0005.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
 
 if __name__ == '__main__':
-    main(1, 500, 150)
+    main(1, 10000, 200)
