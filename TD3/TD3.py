@@ -72,7 +72,9 @@ class TD3(object):
             net_width=128,
             a_lr=1e-4,
             c_lr=1e-4,
-            Q_batchsize=256
+            Q_batchsize=256,
+            critic_tau=0.005,
+            actor_tau=0.005,
     ):
 
         self.actor = Actor(state_dim, action_dim, net_width, max_action).to(device)
@@ -89,8 +91,8 @@ class TD3(object):
         self.gamma = gamma
         self.policy_noise = 0.2 * max_action
         self.noise_clip = 0.5 * max_action
-        self.critic_tau = 0.0005
-        self.actor_tau = 0.0000005
+        self.critic_tau = critic_tau
+        self.actor_tau = actor_tau
         # self.tau = 0.00005
         self.Q_batchsize = Q_batchsize
         self.delay_counter = -1

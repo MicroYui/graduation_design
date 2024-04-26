@@ -197,8 +197,8 @@ class DRL_Environment(object):
         for node in range(self.nodes):
             request = self.request_arrive[service, node]
             if request != 0.0:
-                if self.compute_ability[service, node] > \
-                        self.request_arrive[service, node]:
+                if self.compute_ability[service, node] - \
+                        self.request_arrive[service, node] > 5:
                     # print("compute_ability:", self.compute_ability[service, node],
                     #       "request_arrive:", self.request_arrive[service, node])
                     mean_queue_time += request / request_number / (
@@ -271,7 +271,7 @@ class DRL_Environment(object):
     def get_reward(self):
         return self.get_max_total_time()
 
-    def step(self, state, action, ori_reward):
+    def step(self, state, action):
         dead = False
         self.update_state(state)
         pre_state_fitness = self.get_reward()
@@ -294,8 +294,8 @@ class DRL_Environment(object):
         state[-1] = np.clip(state[-1], 0, 1)
         self.update_state(state)
         state_fitness = self.get_reward()
-        # reward = pre_state_fitness - state_fitness
-        reward = ori_reward - state_fitness
+        reward = pre_state_fitness - state_fitness
+        # reward = ori_reward - state_fitness
         reward = clamp(reward, -300, 300)
         # reward = state_fitness
         # reward = clamp(reward, -1000, 1000)

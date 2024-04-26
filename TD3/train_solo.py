@@ -9,13 +9,13 @@ import ReplayBuffer
 import main as env
 from new_environment import DRL_Environment
 from environment import Environment
-from scale_min import environment_min
+from scale_min import environment_min2
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main(seed, Max_episode, steps):
-    env_with_Dead = False
+    env_with_Dead = True
     state_dim = env.rows * env.cols + len(env.start_service) + 1
     # action_dim = 3 + len(env.start_service) + 1
     action_dim = 3 + 2 + 1  # 3：在x,y坐标上是否放置服务，2：在x索引的服务上增减网关因子，1：增减重要因子
@@ -49,7 +49,7 @@ def main(seed, Max_episode, steps):
     result_y = []
     # state_vector = []
     # line = []
-    environment = environment_min
+    environment = environment_min2
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
                           1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
@@ -82,17 +82,17 @@ def main(seed, Max_episode, steps):
                  ).clip(-max_action, max_action)
             pre_s = s.clone()
             s_prime, r, done = environment.step(s, a, ori_reward)
-            # max_reward = max(max_reward, r)
+            max_reward = max(max_reward, r)
 
             replay_buffer.add(s, a, r, s_prime, done)
             if done:
-                s_prime = pre_s
+                # s_prime = pre_s
 
                 # environment.update_state(pre_s)
                 # pre_r = ori_reward - environment.get_reward()
                 # pre_r = new_environment.clamp(pre_r, -500, 500)
-                # result_y.append(max_reward)
-                # break
+                result_y.append(max_reward)
+                break
 
                 # print("done")
                 # print(s_prime)
@@ -103,8 +103,8 @@ def main(seed, Max_episode, steps):
             s = s_prime
             ep_r += r
 
-        # if not done:
-        result_y.append(r)
+        if not done:
+            result_y.append(max_reward)
         # new_reward = environment.heuristic_algorithm_fitness_function(s.detach().cpu().numpy())
         # if new_reward < reward:
         #     reward = new_reward
@@ -113,12 +113,12 @@ def main(seed, Max_episode, steps):
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
     # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-    plt.savefig(f"2024-04-25/tenga0000005c00005.svg")
+    plt.savefig(f"2024-04-26/a0000005c00005.svg")
     # plt.show()
-    torch.save(model.actor, f"2024-04-25/tenga0000005c00005.pt")
+    torch.save(model.actor, f"2024-04-26/a0000005c00005.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
 
 if __name__ == '__main__':
-    main(1, 5000, 200)
+    main(1, 20000, 200)
