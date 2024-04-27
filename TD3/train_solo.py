@@ -10,6 +10,7 @@ import main as env
 from new_environment import DRL_Environment
 from environment import Environment
 from scale_min import environment_min2
+from scale_mid import environment_mid
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -54,6 +55,7 @@ def main(seed, Max_episode, steps):
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
                           1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
                           0.7000])
+
     # environment.update_state(state)
     # while True:
     #     if not environment.instance_constrains() or not environment.node_capacity_constrains() or \
@@ -120,5 +122,21 @@ def main(seed, Max_episode, steps):
     # print("reward: ", reward)
 
 
+environment = environment_mid
+state = torch.tensor(
+    [0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+     0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+     1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+     0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000,
+     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+     1.0000, 0.0000, 0.0000, 0.0000, 0.8800, 0.9100, 0.0600, 0.1000])
+environment.update_state(state)
+ori_reward = environment.get_reward()
+
 if __name__ == '__main__':
-    main(1, 20000, 200)
+    print(state, "\n", len(state))
+    print("ori_reward:", ori_reward)
+    # main(1, 20000, 200)
