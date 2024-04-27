@@ -197,8 +197,8 @@ class DRL_Environment(object):
         for node in range(self.nodes):
             request = self.request_arrive[service, node]
             if request != 0.0:
-                if self.compute_ability[service, node] - \
-                        self.request_arrive[service, node] > 4:
+                if self.compute_ability[service, node] > \
+                        self.request_arrive[service, node]:
                     # print("compute_ability:", self.compute_ability[service, node],
                     #       "request_arrive:", self.request_arrive[service, node])
                     mean_queue_time += request / request_number / (
@@ -311,7 +311,7 @@ class DRL_Environment(object):
         self.update_state(current_state)
         state_fitness = self.get_reward()
         if not self.constrains:
-            return 10000
+            return self.max_time
         return state_fitness
 
     def step_solo(self, state, action):
@@ -350,3 +350,22 @@ class DRL_Environment(object):
             reward = -300
             dead = True
         return state, reward, dead
+
+    # 用于进行缺少路由的实验
+    def simple_route(self, compute_time_vector: list, transmit_time_vector: list):
+        route_vector = []
+        importance_rate_vector = []
+        total = 0
+
+        for node in range(self.nodes):
+            compute_time = compute_time_vector[node]
+            if compute_time != self.max_time:
+                total += 1
+
+        for node in range(self.nodes):
+            compute_time = compute_time_vector[node]
+            if compute_time == self.max_time:
+                route_vector.append(0)
+            else:
+                route_vector.append(1 / total)
+        return route_vector

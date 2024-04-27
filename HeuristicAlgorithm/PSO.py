@@ -3,10 +3,11 @@ import pandas as pd
 from sko.operators.crossover import crossover_2point
 import matplotlib.pyplot as plt
 from sko.PSO import PSO
-from mySko.PSO import PSO as myPSO
+# from mySko.PSO import PSO as myPSO
 
 import main
-from main import heuristic_algorithm_fitness_function
+# from main import heuristic_algorithm_fitness_function
+from TD3.scale_min import environment_min as environment
 
 if __name__ == '__main__':
     # init
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     # print("max_iter", max_iter)
 
     # define GA
-    pso = PSO(func=heuristic_algorithm_fitness_function,
+    pso = PSO(func=environment.heuristic_algorithm_fitness_function,
               n_dim=len(lb),
               pop=n_particles,
               max_iter=max_iter,
@@ -41,7 +42,7 @@ if __name__ == '__main__':
     # iter
     pso.run()
     print('best_x is \n', pso.gbest_x, '\nbest_y is\n', pso.gbest_y)
-    print("best result:", heuristic_algorithm_fitness_function(pso.gbest_x))
+    print("best result:", environment.heuristic_algorithm_fitness_function(pso.gbest_x))
     plt.plot(pso.gbest_y_hist)
-    plt.savefig("PSO.svg")
+    plt.savefig("PSO_min.svg")
     plt.show()
