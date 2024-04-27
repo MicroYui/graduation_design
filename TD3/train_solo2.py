@@ -9,7 +9,7 @@ import ReplayBuffer
 import main as env
 from new_environment import DRL_Environment
 from environment import Environment
-from scale_min import environment_min
+from scale_min import environment_min2
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -37,10 +37,10 @@ def main(seed, Max_episode, steps):
         "max_action": max_action,
         "gamma": 0.99,
         "net_width": 200,
-        "a_lr": 1e-4,
-        "c_lr": 1e-4,
+        "a_lr": 1e-5,
+        "c_lr": 1e-5,
         "Q_batchsize": 600,
-        "critic_tau": 0.00005,
+        "critic_tau": 0.00001,
         "actor_tau": 0.0000005,
     }
     model = TD3(**kwargs)
@@ -48,7 +48,7 @@ def main(seed, Max_episode, steps):
     result_y = []
     # state_vector = []
     # line = []
-    environment = environment_min
+    environment = environment_min2
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
                           1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
@@ -112,9 +112,9 @@ def main(seed, Max_episode, steps):
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
     # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-    plt.savefig(f"solo/l1e-4a0000005c00005.svg")
+    plt.savefig(f"solo/a0000005c00001.svg")
     # plt.show()
-    torch.save(model.actor, f"solo/l1e-4a0000005c00005.pt")
+    torch.save(model.actor, f"solo/a0000005c00001.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 

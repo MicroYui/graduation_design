@@ -198,7 +198,7 @@ class DRL_Environment(object):
             request = self.request_arrive[service, node]
             if request != 0.0:
                 if self.compute_ability[service, node] - \
-                        self.request_arrive[service, node] > 5:
+                        self.request_arrive[service, node] > 4:
                     # print("compute_ability:", self.compute_ability[service, node],
                     #       "request_arrive:", self.request_arrive[service, node])
                     mean_queue_time += request / request_number / (
@@ -313,3 +313,40 @@ class DRL_Environment(object):
         if not self.constrains:
             return 10000
         return state_fitness
+
+    def step_solo(self, state, action):
+        dead = False
+        self.update_state(state)
+        pre_state_fitness = self.get_reward()
+        selection = int((action[0] / 2 + 0.5) * 3) % 3
+        # 选择进行实例部署操作
+        if selection == 0:
+            x = int((action[1] / 2 + 0.5) * self.services) % self.services
+            y = int((action[2] / 2 + 0.5) * self.nodes) % self.nodes
+            if state[x * self.nodes + y] == 1:
+                state[x * self.nodes + y] = 0
+            else:
+                state[x * self.nodes + y] = 1
+        # 选择进行流量调控操作
+        elif selection == 1:
+            x = int((action[1] / 2 + 0.5) * len(self.delta)) % len(self.delta)
+            if action[2] > 0:
+                state[self.services * self.nodes + x] += 0.01
+            else:
+                state[self.services * self.nodes + x] -= 0.01
+            state[self.services * self.nodes + x] = np.clip(state[self.services * self.nodes + x], 0, 1)
+        # 选择进行路由调控操作
+        else:
+            if action[2] > 0:
+                state[-1] += 0.01
+            else:
+                state[-1] -= 0.01
+            state[-1] = np.clip(state[-1], 0, 1)
+        self.update_state(state)
+        state_fitness = self.get_reward()
+        reward = pre_state_fitness - state_fitness
+        reward = clamp(reward, -300, 300)
+        if not self.check_constrains():
+            reward = -300
+            dead = True
+        return state, reward, dead

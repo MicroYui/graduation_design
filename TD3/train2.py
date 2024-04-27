@@ -9,7 +9,7 @@ import ReplayBuffer
 import main as env
 from new_environment import DRL_Environment
 from environment import Environment
-from scale_min import environment_min2
+from scale_min import environment_min3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -42,14 +42,14 @@ def main(seed, Max_episode, steps):
         "c_lr": 1e-5,
         "Q_batchsize": 600,
         "critic_tau": 0.0005,
-        "actor_tau": 0.000005,
+        "actor_tau": 0.0000005,
     }
     model = TD3(**kwargs)
     replay_buffer = ReplayBuffer.ReplayBuffer(state_dim, action_dim, max_size=int(1e6))
     result_y = []
     # state_vector = []
     # line = []
-    environment = environment_min2
+    environment = environment_min3
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
                           1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
@@ -72,7 +72,7 @@ def main(seed, Max_episode, steps):
         environment.update_state(s)
         done = False
         ep_r = 0
-        max_reward = -99999
+        # max_reward = -99999
         expl_noise *= 0.999
         r = 0
         '''Interact & train'''
@@ -82,7 +82,7 @@ def main(seed, Max_episode, steps):
                  ).clip(-max_action, max_action)
             pre_s = s.clone()
             s_prime, r, done = environment.step(s, a)
-            max_reward = max(max_reward, r)
+            # max_reward = max(max_reward, r)
 
             replay_buffer.add(s, a, r, s_prime, done)
             if done:
@@ -113,12 +113,12 @@ def main(seed, Max_episode, steps):
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
     # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-    plt.savefig(f"2024-04-26/a000005c0005.svg")
+    plt.savefig(f"Zhiqing/a0000005c0005.svg")
     # plt.show()
-    torch.save(model.actor, f"2024-04-26/a000005c0005.pt")
+    torch.save(model.actor, f"Zhiqing/a0000005c0005.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
 
 if __name__ == '__main__':
-    main(1, 3000, 200)
+    main(1, 10000, 200)
