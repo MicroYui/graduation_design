@@ -9,7 +9,7 @@ import ReplayBuffer
 import main as env
 from new_environment import DRL_Environment
 from environment import Environment
-from scale_min import environment_min3
+from scale_min import environment_min2
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -17,8 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def main(seed, Max_episode, steps):
     env_with_Dead = True
     state_dim = env.rows * env.cols + len(env.start_service) + 1
-    # action_dim = 3 + len(env.start_service) + 1
-    action_dim = 3 + 2 + 1  # 3：在x,y坐标上是否放置服务，2：在x索引的服务上增减网关因子，1：增减重要因子
+    action_dim = 3
     max_action = 1.0
     expl_noise = 0.25
     print('  state_dim:', state_dim, '  action_dim:', action_dim, '  max_a:', max_action)
@@ -41,7 +40,7 @@ def main(seed, Max_episode, steps):
         "a_lr": 1e-5,
         "c_lr": 1e-5,
         "Q_batchsize": 600,
-        "critic_tau": 0.0005,
+        "critic_tau": 0.00001,
         "actor_tau": 0.0000005,
     }
     model = TD3(**kwargs)
@@ -49,7 +48,7 @@ def main(seed, Max_episode, steps):
     result_y = []
     # state_vector = []
     # line = []
-    environment = environment_min3
+    environment = environment_min2
     state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                           0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
                           1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
@@ -73,7 +72,7 @@ def main(seed, Max_episode, steps):
         done = False
         ep_r = 0
         # max_reward = -99999
-        expl_noise *= 0.999
+        expl_noise *= 0.99
         r = 0
         '''Interact & train'''
         for step in range(steps):
@@ -81,7 +80,7 @@ def main(seed, Max_episode, steps):
             a = (model.select_action(s) + np.random.normal(0, max_action * expl_noise, size=action_dim)
                  ).clip(-max_action, max_action)
             pre_s = s.clone()
-            s_prime, r, done = environment.step(s, a)
+            s_prime, r, done = environment.step_solo(s, a)
             # max_reward = max(max_reward, r)
 
             replay_buffer.add(s, a, r, s_prime, done)
@@ -113,12 +112,12 @@ def main(seed, Max_episode, steps):
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
     # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-    plt.savefig(f"Zhiqing/a0000005c0005.svg")
+    plt.savefig(f"solo/a0000005c00001.svg")
     # plt.show()
-    torch.save(model.actor, f"Zhiqing/a0000005c0005.pt")
+    torch.save(model.actor, f"solo/a0000005c00001.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
 
 if __name__ == '__main__':
-    main(1, 10000, 200)
+    main(1, 3000, 200)

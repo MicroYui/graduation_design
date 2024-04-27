@@ -18,8 +18,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def main(seed, Max_episode, steps):
     env_with_Dead = True
     state_dim = env.rows * env.cols + len(env.start_service) + 1
-    # action_dim = 3 + len(env.start_service) + 1
-    action_dim = 3 + 2 + 1  # 3：在x,y坐标上是否放置服务，2：在x索引的服务上增减网关因子，1：增减重要因子
+    action_dim = 3
     max_action = 1.0
     expl_noise = 0.25
     print('  state_dim:', state_dim, '  action_dim:', action_dim, '  max_a:', max_action)
@@ -74,8 +73,8 @@ def main(seed, Max_episode, steps):
         environment.update_state(s)
         done = False
         ep_r = 0
-        max_reward = -99999
-        expl_noise *= 0.999
+        # max_reward = -99999
+        expl_noise *= 0.99
         r = 0
         '''Interact & train'''
         for step in range(steps):
@@ -83,8 +82,8 @@ def main(seed, Max_episode, steps):
             a = (model.select_action(s) + np.random.normal(0, max_action * expl_noise, size=action_dim)
                  ).clip(-max_action, max_action)
             pre_s = s.clone()
-            s_prime, r, done = environment.step(s, a, ori_reward)
-            max_reward = max(max_reward, r)
+            s_prime, r, done = environment.step_solo(s, a)
+            # max_reward = max(max_reward, r)
 
             replay_buffer.add(s, a, r, s_prime, done)
             if done:
@@ -93,7 +92,7 @@ def main(seed, Max_episode, steps):
                 # environment.update_state(pre_s)
                 # pre_r = ori_reward - environment.get_reward()
                 # pre_r = new_environment.clamp(pre_r, -500, 500)
-                result_y.append(max_reward)
+                result_y.append(ep_r)
                 break
 
                 # print("done")
@@ -106,7 +105,7 @@ def main(seed, Max_episode, steps):
             ep_r += r
 
         if not done:
-            result_y.append(max_reward)
+            result_y.append(ep_r)
         # new_reward = environment.heuristic_algorithm_fitness_function(s.detach().cpu().numpy())
         # if new_reward < reward:
         #     reward = new_reward
@@ -115,9 +114,9 @@ def main(seed, Max_episode, steps):
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
     plt.plot(result_y)
     # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-    plt.savefig(f"2024-04-26/a0000005c00005.svg")
+    plt.savefig(f"solo/l1e-4a0000005c00005.svg")
     # plt.show()
-    torch.save(model.actor, f"2024-04-26/a0000005c00005.pt")
+    torch.save(model.actor, f"solo/l1e-4a0000005c00005.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 

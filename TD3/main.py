@@ -470,7 +470,7 @@ def step(state, action):
 
 if __name__ == '__main__':
 
-    actor = torch.load('2024-04-26/a000005c0005.pt', map_location=torch.device('cpu'))
+    actor = torch.load('solo/a0000005c00005.pt', map_location=torch.device('cpu'))
     # print(actor)
     environment = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
@@ -498,13 +498,13 @@ if __name__ == '__main__':
     environment.update_state(s)
     for i in range(100):
         action = actor(s)
-        s, _, dead = environment.step(s, action)
+        s, _, dead = environment.step_solo(s, action)
         print(state)
         environment.update_state(s)
         print("reward: ", environment.get_reward())
         if dead:
             print("dead")
-            break
+            # break
         print("---------------------")
 
     # min_state = reset()

@@ -61,3 +61,7 @@ environment_min = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, 
 environment_min2 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
                                    start_service, access_node, service_resource_occupancy, node_resource_capacity,
                                    instance, service_dependency, net_delay, compute_time)
+
+environment_min3 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
+                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                   instance, service_dependency, net_delay, compute_time)
