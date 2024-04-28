@@ -20,7 +20,7 @@ def main(seed, Max_episode, steps):
     state_dim = env.rows * env.cols + len(env.start_service) + 1
     action_dim = 3
     max_action = 1.0
-    expl_noise = 0.25
+    expl_noise = 0.3
     print('  state_dim:', state_dim, '  action_dim:', action_dim, '  max_a:', max_action)
 
     random_seed = seed
@@ -112,30 +112,31 @@ def main(seed, Max_episode, steps):
         #     state = s
 
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
-    plt.plot(result_y)
-    # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-    plt.savefig(f"solo/l1e-4a0000005c00005.svg")
-    # plt.show()
-    torch.save(model.actor, f"solo/l1e-4a0000005c00005.pt")
+        if episode % 100 == 0:
+            plt.plot(result_y)
+            # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
+            plt.savefig(f"2024-04-27/1000steps_a0000005c00005epo_{episode}.svg")
+            # plt.show()
+            torch.save(model.actor, f"2024-04-27/1000steps_a0000005c00005_{episode}.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
 
-environment = environment_mid
-state = torch.tensor(
-    [0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-     0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-     1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
-     0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000,
-     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-     0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-     1.0000, 0.0000, 0.0000, 0.0000, 0.8800, 0.9100, 0.0600, 0.1000])
-environment.update_state(state)
-ori_reward = environment.get_reward()
+# environment = environment_mid
+# state = torch.tensor(
+#     [0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+#      0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+#      0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+#      1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+#      0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+#      0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000,
+#      0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+#      0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+#      1.0000, 0.0000, 0.0000, 0.0000, 0.8800, 0.9100, 0.0600, 0.1000])
+# environment.update_state(state)
+# ori_reward = environment.get_reward()
 
 if __name__ == '__main__':
-    print(state, "\n", len(state))
-    print("ori_reward:", ori_reward)
-    # main(1, 20000, 200)
+    # print(state, "\n", len(state))
+    # print("ori_reward:", ori_reward)
+    main(1, 10000, 1000)
