@@ -197,8 +197,8 @@ class DRL_Environment(object):
         for node in range(self.nodes):
             request = self.request_arrive[service, node]
             if request != 0.0:
-                if self.compute_ability[service, node] > \
-                        self.request_arrive[service, node]:
+                if self.compute_ability[service, node] - \
+                        self.request_arrive[service, node] > 4:
                     # print("compute_ability:", self.compute_ability[service, node],
                     #       "request_arrive:", self.request_arrive[service, node])
                     mean_queue_time += request / request_number / (

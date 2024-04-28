@@ -3,6 +3,7 @@ import torch
 
 from environment import Environment
 from new_environment import DRL_Environment
+from scale_mid import environment_mid
 
 # 应用耗费成本
 app_fee = 200
@@ -470,15 +471,26 @@ def step(state, action):
 
 if __name__ == '__main__':
 
-    actor = torch.load('solo/a0000005c00005.pt', map_location=torch.device('cpu'))
+    actor = torch.load('mid/a0000005c00001epo_9000.pt', map_location=torch.device('cpu'))
     # print(actor)
-    environment = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
-                                  start_service, access_node, service_resource_occupancy, node_resource_capacity,
-                                  instance, service_dependency, net_delay, compute_time)
-    state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
-                          0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
-                          0.7000])
+    # environment = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
+    #                               start_service, access_node, service_resource_occupancy, node_resource_capacity,
+    #                               instance, service_dependency, net_delay, compute_time)
+    environment = environment_mid
+    # state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+    #                       0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+    #                       1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
+    #                       0.7000])
+    state = torch.tensor(
+        [0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+         0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+         1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+         0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+         1.0000, 0.0000, 0.0000, 0.0000, 0.8800, 0.9100, 0.0600, 0.1000])
     # state = state.detach().cpu().numpy()
     # state = np.array([1, 0, 0, 0, 0, 1,
     #                   1, 0, 1, 0, 0, 0,
