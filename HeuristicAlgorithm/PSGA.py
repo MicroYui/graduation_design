@@ -1,7 +1,8 @@
 import numpy as np
 from sko.tools import func_transformer
-from .GA_R_PSGA import GA
-from .base import SkoBase
+from GA_R_PSGA import GA
+# from .base import SkoBase
+from sko.base import SkoBase
 
 
 class PSO(SkoBase):
@@ -145,7 +146,8 @@ class PSO(SkoBase):
                         precision=self.ga_precision,
                         lb=self.ga_lb,
                         ub=self.ga_ub,
-                        init_chrome=np.vstack([np.array([particle]), np.random.uniform(self.ga_lb, self.ga_ub, (ga_ps-1, self.n_dim))]))
+                        init_chrome=np.vstack(
+                            [np.array([particle]), np.random.uniform(self.ga_lb, self.ga_ub, (ga_ps - 1, self.n_dim))]))
                 ga_x, ga_y = ga.run()
                 self.X[rand_idx[i]] = ga_x
 

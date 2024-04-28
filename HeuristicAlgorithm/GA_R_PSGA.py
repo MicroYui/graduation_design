@@ -1,9 +1,10 @@
 import numpy as np
 
-from .base import SkoBase
+from sko.base import SkoBase
 from sko.tools import func_transformer
 from abc import ABCMeta, abstractmethod
-from .operators import crossover, mutation, ranking, selection
+from sko.operators import crossover, ranking, selection
+import mutation
 
 
 class GeneticAlgorithmBase(SkoBase, metaclass=ABCMeta):
