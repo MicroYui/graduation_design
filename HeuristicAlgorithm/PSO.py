@@ -6,13 +6,14 @@ from sko.PSO import PSO
 
 import main
 # from main import heuristic_algorithm_fitness_function
-from TD3.scale_min import environment_min as environment
+# from TD3.scale_min import environment_min as environment
+from TD3.scale_mid import environment_mid as environment
 
 if __name__ == '__main__':
     # init
-    ub = [1] * (main.rows * main.cols + len(main.start_service) + 1)
-    lb = [0] * (main.rows * main.cols + len(main.start_service) + 1)
-    precision = [1] * (main.rows * main.cols) + [1e-7] * (len(main.start_service) + 1)
+    ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
+    lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
+    precision = [1] * (environment.services * environment.nodes) + [1e-7] * (len(environment.start_service) + 1)
     n_particles = int(1000 * np.log(len(lb)))
     n_particles = n_particles + n_particles % 2
     # print("n_particles", n_particles)
@@ -43,5 +44,5 @@ if __name__ == '__main__':
     print('best_x is \n', pso.gbest_x, '\nbest_y is\n', pso.gbest_y)
     print("best result:", environment.heuristic_algorithm_fitness_function(pso.gbest_x))
     plt.plot(pso.gbest_y_hist)
-    plt.savefig("PSO_min.svg")
+    plt.savefig("PSO_mid.svg")
     plt.show()

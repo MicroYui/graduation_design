@@ -104,13 +104,21 @@ def add_column_divided(matrix, divider):
 
 compute_time = np.array([[20], [15], [28], [6], [30], [17], [13], [10], [100], [30]])
 for _ in range(3):
-    compute_time = add_column_divided(compute_time, 1/3*2)
-    compute_time = add_column_divided(compute_time, 1/2)
-    compute_time = add_column_divided(compute_time, 1/3)
+    compute_time = add_column_divided(compute_time, 1 / 3 * 2)
+    compute_time = add_column_divided(compute_time, 1 / 2)
+    compute_time = add_column_divided(compute_time, 1 / 3)
 
 environment_mid = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, lambda_out,
                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
                                   instance, service_dependency, net_delay, compute_time)
+
+environment_mid2 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, lambda_out,
+                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                   instance, service_dependency, net_delay, compute_time)
+
+environment_mid3 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, lambda_out,
+                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                   instance, service_dependency, net_delay, compute_time)
 
 if __name__ == '__main__':
     print(compute_time)

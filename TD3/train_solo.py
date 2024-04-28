@@ -9,15 +9,16 @@ import ReplayBuffer
 import main as env
 from new_environment import DRL_Environment
 from environment import Environment
-from scale_min import environment_min2
+from scale_mid import environment_mid2
 from scale_mid import environment_mid
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main(seed, Max_episode, steps):
+    environment = environment_mid2
     env_with_Dead = True
-    state_dim = env.rows * env.cols + len(env.start_service) + 1
+    state_dim = environment.services * environment.nodes + len(environment.start_service) + 1
     action_dim = 3
     max_action = 1.0
     expl_noise = 0.3
@@ -41,19 +42,33 @@ def main(seed, Max_episode, steps):
         "a_lr": 1e-5,
         "c_lr": 1e-5,
         "Q_batchsize": 600,
-        "critic_tau": 0.00005,
-        "actor_tau": 0.0000005,
+        "critic_tau": 0.005,
+        "actor_tau": 0.0005,
     }
     model = TD3(**kwargs)
     replay_buffer = ReplayBuffer.ReplayBuffer(state_dim, action_dim, max_size=int(1e6))
     result_y = []
     # state_vector = []
     # line = []
-    environment = environment_min2
-    state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
-                          0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
-                          0.7000])
+
+    # state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+    #                       0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+    #                       1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 0.8300,
+    #                       0.7000])
+    state = torch.tensor(
+        [0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+         0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.0000, 0.0000,
+         0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+         1.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000,
+         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
+         0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000,
+         0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+         0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.0000,
+         0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 1.0000, 0.0000,
+         0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 0.0000, 1.0000,
+         1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+         1.0000, 0.9000, 0.8200, 0.4800, 0.6700]
+    )
 
     # environment.update_state(state)
     # while True:
@@ -74,7 +89,7 @@ def main(seed, Max_episode, steps):
         done = False
         ep_r = 0
         # max_reward = -99999
-        expl_noise *= 0.99
+        expl_noise *= 0.999
         r = 0
         '''Interact & train'''
         for step in range(steps):
@@ -115,9 +130,9 @@ def main(seed, Max_episode, steps):
         if episode % 100 == 0:
             plt.plot(result_y)
             # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-            plt.savefig(f"2024-04-27/1000steps_a0000005c00005epo_{episode}.svg")
+            plt.savefig(f"2024-04-28/300steps_a0000005c00005epo_{episode}.svg")
             # plt.show()
-            torch.save(model.actor, f"2024-04-27/1000steps_a0000005c00005_{episode}.pt")
+            torch.save(model.actor, f"2024-04-28/300steps_a0000005c00005_{episode}.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
@@ -139,4 +154,4 @@ def main(seed, Max_episode, steps):
 if __name__ == '__main__':
     # print(state, "\n", len(state))
     # print("ori_reward:", ori_reward)
-    main(1, 10000, 1000)
+    main(1, 10000, 300)
