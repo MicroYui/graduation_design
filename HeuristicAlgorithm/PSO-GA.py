@@ -4,15 +4,15 @@ from sko.operators.crossover import crossover_2point
 import matplotlib.pyplot as plt
 from PSGA import PSO
 
-# from TD3.scale_min import environment_min as environment
-from TD3.scale_mid import environment_mid3 as environment
+from TD3.scale_min import environment_min as environment
+# from TD3.scale_mid import environment_mid3 as environment
 
 if __name__ == '__main__':
     # init
     ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     precision = [1] * (environment.services * environment.nodes) + [1e-7] * (len(environment.start_service) + 1)
-    n_particles = int(1000 * np.log(len(lb)))
+    n_particles = int(100 * np.log(len(lb)))
     n_particles = n_particles + n_particles % 2
     max_iter = int(20 * np.log(len(lb)))
 

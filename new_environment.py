@@ -169,6 +169,7 @@ class DRL_Environment(object):
         mean_transmit_time = 0
         request_number = self.request_arrive[service, :].sum()
         if request_number == 0:
+            # print("有服务到达率为0")
             self.constrains = False
             return 0
 
@@ -205,7 +206,9 @@ class DRL_Environment(object):
                             self.compute_ability[service, node] -
                             self.request_arrive[service, node])
                 else:
-                    # print("排队论约束不满足")
+                    # print(f"service:{service}排队论约束不满足")
+                    # print(f"node:{node}, compute_ability:{self.compute_ability[service, node]}, "
+                    #       f"request_arrive:{self.request_arrive[service, node]}")
                     self.constrains = False
                     return 0
         # print("mean_queue_time", mean_queue_time)
@@ -369,3 +372,14 @@ class DRL_Environment(object):
             else:
                 route_vector.append(1 / total)
         return route_vector
+
+    def my_heuristic_algorithm_fitness_function(self, state):
+        # 将state实例部署部分都变成0和1，后面部分都局限在0和1
+        current_state = torch.tensor(state)
+        current_state[:self.services * self.nodes] = torch.round(current_state[:self.services * self.nodes])
+        current_state[self.services * self.nodes:] = torch.clamp(current_state[self.services * self.nodes:], 0, 1)
+        self.update_state(current_state)
+        state_fitness = self.get_reward()
+        if not self.constrains:
+            return self.max_time
+        return state_fitness
