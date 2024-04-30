@@ -127,12 +127,12 @@ def main(seed, Max_episode, steps):
         #     state = s
 
     # print("y:\n", result_y[-1], "\nstate\n", state_vector[-1])
-        if episode % 100 == 0:
+        if episode % 1000 == 0:
             plt.plot(result_y)
             # plt.savefig(f"image/not_reset_modify_reward_with_dead_{Max_episode}_{steps}.svg")
-            plt.savefig(f"2024-04-28/300steps_a0000005c00005epo_{episode}.svg")
+            plt.savefig(f"2024-04-29/300steps_a0000005c00005epo_{episode}.svg")
             # plt.show()
-            torch.save(model.actor, f"2024-04-28/300steps_a0000005c00005_{episode}.pt")
+            torch.save(model.actor, f"2024-04-29/300steps_a0000005c00005_{episode}.pt")
     # print("state:\n", state)
     # print("reward: ", reward)
 
@@ -154,4 +154,4 @@ def main(seed, Max_episode, steps):
 if __name__ == '__main__':
     # print(state, "\n", len(state))
     # print("ori_reward:", ori_reward)
-    main(1, 10000, 300)
+    main(1, 20000, 300)
