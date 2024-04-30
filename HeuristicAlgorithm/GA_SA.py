@@ -92,46 +92,11 @@ class GeneticAlgorithmBase(SkoBase, metaclass=ABCMeta):
     def mutation(self):
         pass
 
+    @abstractmethod
     def run(self, max_iter=None):
-        self.max_iter = max_iter or self.max_iter
-        best = []
-        for i in range(self.max_iter):
-            self.X = self.chrom2x(self.Chrom)
-            # 从X中随机选取一个个体，丢入模拟退火中进行计算
-            selected = self.X[np.random.randint(0, self.size_pop)]
-            sa = SA(func=environment.my_heuristic_algorithm_fitness_function, x0=selected, T_max=1, T_min=1e-9,
-                    L=300, max_stay_counter=150)
-            best_x, best_y = sa.run()
-            best_x = np.clip(best_x, 0, 1)
-            best_x[:self.services * self.nodes] = np.round(best_x[:self.services * self.nodes])
+        pass
 
-            self.Y = self.x2y()
-            self.ranking()
-            self.selection()
-            self.crossover()
-            self.mutation()
-
-            # record the best ones
-            generation_best_index = self.FitV.argmax()
-            self.generation_best_X.append(self.X[generation_best_index, :])
-            self.generation_best_Y.append(self.Y[generation_best_index])
-            self.all_history_Y.append(self.Y)
-            self.all_history_FitV.append(self.FitV)
-
-            if self.early_stop:
-                best.append(min(self.generation_best_Y))
-                if len(best) >= self.early_stop:
-                    if best.count(min(best)) == len(best):
-                        break
-                    else:
-                        best.pop(0)
-
-        global_best_index = np.array(self.generation_best_Y).argmin()
-        self.best_x = self.generation_best_X[global_best_index]
-        self.best_y = self.func(np.array([self.best_x]))
-        return self.best_x, self.best_y
-
-    fit = run
+    # fit = run
 
 
 class GA(GeneticAlgorithmBase):
@@ -169,6 +134,51 @@ class GA(GeneticAlgorithmBase):
         X = np.clip(X, 0, 1)
         X[:self.services * self.nodes] = np.round(X[:self.services * self.nodes])
         return X
+
+    def run(self, max_iter=None):
+        self.max_iter = max_iter or self.max_iter
+        best = []
+        for i in range(self.max_iter):
+            self.X = self.chrom2x(self.Chrom)
+            # 从X中随机选取一个个体，丢入模拟退火中进行计算
+            index = np.random.randint(0, self.size_pop)
+            selected = self.X[index]
+            sa = SA(func=environment.my_heuristic_algorithm_fitness_function, x0=selected, T_max=1, T_min=1e-9,
+                    L=300, max_stay_counter=150)
+            best_x, best_y = sa.run()
+            best_x = np.clip(best_x, 0, 1)
+            best_x[:self.services * self.nodes] = np.round(best_x[:self.services * self.nodes])
+            # 将best_x解码为二进制
+            best_x = best_x.flatten()
+            best_x = [encode_decimal(x, 8) for x in best_x]
+            # 将二进制编码的best_x放回Chrom中
+            self.Chrom[index] = np.array([int(c) for c in ''.join(best_x)])
+
+            self.Y = self.x2y()
+            self.ranking()
+            self.selection()
+            self.crossover()
+            self.mutation()
+
+            # record the best ones
+            generation_best_index = self.FitV.argmax()
+            self.generation_best_X.append(self.X[generation_best_index, :])
+            self.generation_best_Y.append(self.Y[generation_best_index])
+            self.all_history_Y.append(self.Y)
+            self.all_history_FitV.append(self.FitV)
+
+            if self.early_stop:
+                best.append(min(self.generation_best_Y))
+                if len(best) >= self.early_stop:
+                    if best.count(min(best)) == len(best):
+                        break
+                    else:
+                        best.pop(0)
+
+        global_best_index = np.array(self.generation_best_Y).argmin()
+        self.best_x = self.generation_best_X[global_best_index]
+        self.best_y = self.func(np.array([self.best_x]))
+        return self.best_x, self.best_y
 
     ranking = ranking.ranking
     selection = selection.selection_tournament_faster

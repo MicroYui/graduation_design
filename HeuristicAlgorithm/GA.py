@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
-# from sko.GA import GA
-from myGA import GA
+from sko.GA import GA
+# from myGA import GA
 from sko.operators.crossover import crossover_2point_bit
 import matplotlib.pyplot as plt
 
 import main
-# from TD3.scale_min import environment_min as environment
-from TD3.scale_mid import environment_mid as environment
+from TD3.scale_min import environment_min as environment
+# from TD3.scale_mid import environment_mid as environment
 # from TD3.scale_max import environment_max as environment
 
 if __name__ == '__main__':
@@ -15,8 +15,8 @@ if __name__ == '__main__':
     ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     precision = [1] * (environment.services * environment.nodes) + [1e-2] * (len(environment.start_service) + 1)
-    n_particles = int(100 * np.log(len(lb)))
-    max_iter = int(100 * np.log(len(lb)))
+    n_particles = int(100 * len(lb))
+    max_iter = int(100 * len(lb))
 
     # define GA
     ga = GA(func=environment.heuristic_algorithm_fitness_function,
@@ -26,8 +26,6 @@ if __name__ == '__main__':
             precision=precision,
             lb=lb,
             ub=ub,
-            services=environment.services,
-            nodes=environment.nodes,
             )
     ga.register(operator_name='crossover', operator=crossover_2point_bit)
 
@@ -40,6 +38,6 @@ if __name__ == '__main__':
     # ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
     Y_history.min(axis=1).cummin().plot(kind='line')
     print("best_x:\n", ga.best_x, "\nbest_y:", ga.best_y)
-    plt.savefig("GA_my_mid.svg")
+    plt.savefig("GA_min.svg")
     plt.show()
 
