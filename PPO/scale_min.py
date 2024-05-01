@@ -1,4 +1,6 @@
 import numpy as np
+
+from two_action_environment import two_action_environment
 from one_action_environment import one_action_environment
 
 app_fee = 2000
@@ -56,18 +58,26 @@ compute_time = np.array([
     [78, 78 / 6 * 5, 78 / 3 * 2, 78 / 2, 78 / 3]
 ])
 
-environment_min = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
-                                         start_service, access_node, service_resource_occupancy, node_resource_capacity,
-                                         instance, service_dependency, net_delay, compute_time)
+one_environment_min = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
+                                             lambda_out,
+                                             start_service, access_node, service_resource_occupancy,
+                                             node_resource_capacity,
+                                             instance, service_dependency, net_delay, compute_time)
 
-environment_min2 = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
-                                          lambda_out,
-                                          start_service, access_node, service_resource_occupancy,
-                                          node_resource_capacity,
-                                          instance, service_dependency, net_delay, compute_time)
+one_environment_min2 = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
+                                              lambda_out,
+                                              start_service, access_node, service_resource_occupancy,
+                                              node_resource_capacity,
+                                              instance, service_dependency, net_delay, compute_time)
 
-environment_min3 = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
-                                          lambda_out,
-                                          start_service, access_node, service_resource_occupancy,
-                                          node_resource_capacity,
-                                          instance, service_dependency, net_delay, compute_time)
+one_environment_min3 = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
+                                              lambda_out,
+                                              start_service, access_node, service_resource_occupancy,
+                                              node_resource_capacity,
+                                              instance, service_dependency, net_delay, compute_time)
+
+two_environment_min = two_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
+                                             lambda_out,
+                                             start_service, access_node, service_resource_occupancy,
+                                             node_resource_capacity,
+                                             instance, service_dependency, net_delay, compute_time)
