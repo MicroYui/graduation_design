@@ -2,7 +2,7 @@ import time
 import gym
 import torch
 
-from scale_min import environment_min
+from TD3.scale_min import environment_min
 from PPO import PPO
 
 
@@ -27,7 +27,7 @@ def test():
     # max_ep_len = 1500           # max timesteps in one episode
     # action_std = 0.1            # set same std for action distribution which was used while saving
 
-    env_name = "scale_min"
+    env_name = "scale_min_origin"
     has_continuous_action_space = True
     max_ep_len = 1000  # max timesteps in one episode
     action_std = 0.1  # set same std for action distribution which was used while saving
@@ -48,8 +48,9 @@ def test():
 
     env = environment_min
 
-    state_dim = env.services * env.nodes
-    action_dim = 3
+    state_dim = env.services * env.nodes + len(env.start_service) + 1
+    # action_dim = 3 + len(env.start_service) + 1
+    action_dim = 3 + 2 + 1  # 3：在x,y坐标上是否放置服务，2：在x索引的服务上增减网关因子，1：增减重要因子
 
     # initialize a PPO agent
     ppo_agent = PPO(state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space,
@@ -73,12 +74,12 @@ def test():
     for ep in range(1, total_test_episodes + 1):
         ep_reward = 0
         state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
-                              0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
-                              1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000])
-
+                              0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+                              1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.0000, 1.0000,
+                              0.7000])
         for t in range(1, max_ep_len + 1):
             action = ppo_agent.select_action(state)
-            state, reward, done = env.step(state, action)
+            state, reward, done = env.step_solo(state, action)
             ep_reward += reward
 
             # if render:

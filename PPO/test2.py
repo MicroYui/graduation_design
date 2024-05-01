@@ -2,7 +2,7 @@ import time
 import gym
 import torch
 
-from scale_min import environment_min
+from TD3.scale_min import environment_min
 from PPO import PPO
 
 
@@ -35,7 +35,7 @@ def test():
     render = True  # render environment on screen
     frame_delay = 0  # if required; add delay b/w frames
 
-    total_test_episodes = 1  # total num of testing episodes
+    total_test_episodes = 10  # total num of testing episodes
 
     K_epochs = 80  # update policy for K epochs
     eps_clip = 0.2  # clip parameter for PPO
@@ -78,7 +78,7 @@ def test():
                               0.7000])
         for t in range(1, max_ep_len + 1):
             action = ppo_agent.select_action(state)
-            state, reward, done = env.step(state, action)
+            state, reward, done = env.step_solo(state, action)
             ep_reward += reward
 
             # if render:

@@ -5,20 +5,21 @@ import torch
 import numpy as np
 
 from PPO import PPO
-# from scale_min import environment_min
-from TD3.scale_min import environment_min
+from scale_min import environment_min
+# from TD3.scale_min import environment_min
+
 
 ################################### Training ###################################
 def train():
     print("============================================================================================")
 
     ####### initialize environment hyperparameters ######
-    env_name = "scale_min"
+    env_name = "scale_min2"
 
     has_continuous_action_space = True  # continuous action space; else discrete
 
     max_ep_len = 1000  # max timesteps in one episode
-    max_training_timesteps = int(7e6)  # break training loop if timeteps > max_training_timesteps
+    max_training_timesteps = int(4e6)  # break training loop if timeteps > max_training_timesteps
 
     print_freq = max_ep_len * 10  # print avg reward in the interval (in num timesteps)
     log_freq = max_ep_len * 2  # log avg reward in the interval (in num timesteps)
@@ -154,9 +155,9 @@ def train():
     time_step = 0
     i_episode = 0
 
-    s = torch.tensor([0.0000, 1.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
-                      0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-                      1.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000])
+    s = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+                      0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
+                      1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000])
 
     # training loop
     while time_step <= max_training_timesteps:
