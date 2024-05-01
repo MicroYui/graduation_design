@@ -12,9 +12,7 @@ rows = 5
 cols = 5
 max_time = 999999
 start_service = [0, 3]
-delta = np.random.rand(len(start_service))
 lambda_out = [app_1_request, app_2_request]
-lambda_in = delta * lambda_out
 access_node = [0, 3]
 second = 1000
 service_resource_occupancy = np.array([
@@ -32,6 +30,10 @@ node_resource_capacity = np.array([
     [12, 2048, 2048],
 ])
 instance = np.random.randint(2, size=(rows, cols))
+# 服务依赖关系
+# 0 → 1 → 2
+#     ↑
+# 3 → 4
 service_dependency = np.array([
     [0, 1, 0, 0, 0],
     [0, 0, 1, 0, 0],

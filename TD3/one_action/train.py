@@ -78,7 +78,7 @@ def main(seed, Max_episode, steps):
     environment.update_state(state)
     ori_reward = environment.get_reward()
 
-    for episode in trange(Max_episode):
+    for episode in trange(1, Max_episode + 1):
         s = state.clone()
         # s = environment.constrains_reset()
         environment.update_state(s)
