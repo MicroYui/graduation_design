@@ -1,6 +1,6 @@
 import numpy as np
-import torch
 
+from two_action_environment import two_action_environment
 from new_environment import DRL_Environment
 
 app_fee = 1000
@@ -13,7 +13,7 @@ app_2_request = 30
 app_3_request = 30
 services = 10
 nodes = 10
-max_time = 999
+max_time = 999999
 start_service = [0, 5, 7]
 lambda_out = [app_1_request, app_2_request, app_3_request]
 access_node = [0, 3, 8]
@@ -114,22 +114,19 @@ environment_mid = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, 
                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
                                   instance, service_dependency, net_delay, compute_time)
 
+environment_mid2 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, lambda_out,
+                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                   instance, service_dependency, net_delay, compute_time)
+
+environment_mid3 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, lambda_out,
+                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                   instance, service_dependency, net_delay, compute_time)
+
+two_environment_mid = two_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time,
+                                             lambda_out,
+                                             start_service, access_node, service_resource_occupancy,
+                                             node_resource_capacity,
+                                             instance, service_dependency, net_delay, compute_time)
+
 if __name__ == '__main__':
-    state = torch.tensor(
-        [0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000,
-         0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.0000, 0.0000,
-         0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
-         1.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000,
-         0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
-         0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000,
-         0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
-         0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.0000,
-         0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 1.0000, 0.0000,
-         0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 0.0000, 1.0000,
-         1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000,
-         1.0000, 0.9500, 0.9500, 0.9500, 0.6700]
-    )
-    environment_mid.update_state(state)
-    print(environment_mid.check_constrains())
-    print(environment_mid.get_reward())
-    # 286.33916433530146
+    print(compute_time)

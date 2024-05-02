@@ -314,7 +314,7 @@ class DRL_Environment(object):
         self.update_state(current_state)
         state_fitness = self.get_reward()
         if not self.constrains:
-            return self.max_time + self.cost_punishment() + self.capacity_punishment() + self.instance_punishment()
+            return self.max_time
         return state_fitness
 
     def step_solo(self, state, action):
@@ -383,44 +383,3 @@ class DRL_Environment(object):
         if not self.constrains:
             return self.max_time
         return state_fitness
-
-    def cost_punishment(self):
-        instance_cost = 0
-        for node in range(self.nodes):
-            cpu, ram, disk = 0, 0, 0
-            for service in range(self.services):
-                cpu += self.service_resource_occupancy[service, 0] * self.instance[service, node]
-                ram += self.service_resource_occupancy[service, 1] * self.instance[service, node]
-                disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
-            instance_cost += cpu * self.cpu_fee + ram * self.ram_fee + disk * self.disk_fee
-        request_decline = sum(self.request_out) - sum(self.request_in)
-        request_cost = request_decline * self.app_fee
-        total_cost = instance_cost + request_cost
-        if total_cost <= self.max_fee:
-            return 0
-        else:
-            return total_cost - self.max_fee
-
-    def instance_punishment(self):
-        number = 0
-        for service in range(self.services):
-            instance_num = self.instance[service, :].sum()
-            if instance_num == 0:
-                number += 1
-        return number * self.max_time
-
-    def capacity_punishment(self):
-        total = 0
-        for node in range(self.nodes):
-            cpu, ram, disk = 0, 0, 0
-            for service in range(self.services):
-                cpu += self.service_resource_occupancy[service, 0] * self.instance[service, node]
-                ram += self.service_resource_occupancy[service, 1] * self.instance[service, node]
-                disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
-            if cpu > self.node_resource_capacity[node, 0]:
-                total += (cpu - self.node_resource_capacity[node, 0]) * self.cpu_fee * 100
-            if ram > self.node_resource_capacity[node, 1]:
-                total += (ram - self.node_resource_capacity[node, 1]) * self.ram_fee * 100
-            if disk > self.node_resource_capacity[node, 2]:
-                total += (disk - self.node_resource_capacity[node, 2]) * self.disk_fee * 100
-        return total

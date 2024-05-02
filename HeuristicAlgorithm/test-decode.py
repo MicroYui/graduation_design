@@ -1,5 +1,7 @@
 import random
 
+import numpy as np
+
 
 # 随机生成一个长度为 n 的二进制串
 def generate_binary_string(n):
@@ -42,3 +44,16 @@ if __name__ == '__main__':
     print(type(encoded_binary))
     print("Decoded Decimal:", decoded_decimal)
     print(type(decoded_decimal))
+
+    matrix = np.random.rand(5, 5)
+
+    # 创建一个1x5的新行
+    new_row = np.random.rand(1, 5)
+
+    # 使用 np.vstack() 函数将新行添加到矩阵末尾
+    extended_matrix = np.vstack((matrix, new_row))
+
+    print("Original matrix:")
+    print(matrix)
+    print("\nExtended matrix:")
+    print(extended_matrix)

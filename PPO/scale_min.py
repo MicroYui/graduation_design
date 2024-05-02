@@ -1,8 +1,7 @@
 import numpy as np
 import torch
 
-from two_action_environment import two_action_environment
-from one_action_environment import one_action_environment
+from new_environment import DRL_Environment
 
 app_fee = 2000
 cpu_fee = 1
@@ -13,7 +12,7 @@ app_1_request = 50
 app_2_request = 30
 rows = 5
 cols = 5
-max_time = 999999
+max_time = 999
 start_service = [0, 3]
 lambda_out = [app_1_request, app_2_request]
 access_node = [0, 3]
@@ -59,33 +58,16 @@ compute_time = np.array([
     [78, 78 / 6 * 5, 78 / 3 * 2, 78 / 2, 78 / 3]
 ])
 
-one_environment_min = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
-                                             lambda_out,
-                                             start_service, access_node, service_resource_occupancy,
-                                             node_resource_capacity,
-                                             instance, service_dependency, net_delay, compute_time)
-
-one_environment_min2 = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
-                                              lambda_out,
-                                              start_service, access_node, service_resource_occupancy,
-                                              node_resource_capacity,
-                                              instance, service_dependency, net_delay, compute_time)
-
-one_environment_min3 = one_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
-                                              lambda_out,
-                                              start_service, access_node, service_resource_occupancy,
-                                              node_resource_capacity,
-                                              instance, service_dependency, net_delay, compute_time)
-
-two_environment_min = two_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time,
-                                             lambda_out,
-                                             start_service, access_node, service_resource_occupancy,
-                                             node_resource_capacity,
-                                             instance, service_dependency, net_delay, compute_time)
+environment_min = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
+                                  start_service, access_node, service_resource_occupancy, node_resource_capacity,
+                                  instance, service_dependency, net_delay, compute_time)
 
 if __name__ == '__main__':
-    state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
-                          0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
-                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.5000])
-    two_environment_min.update_state(state)
-    print(two_environment_min.get_reward())
+    state = torch.tensor([0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+                          0.0000, 1.0000, 1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+                          1.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.9600, 0.9500,
+                          0.7000])
+    environment_min.update_state(state)
+    print(environment_min.check_constrains())
+    print(environment_min.get_reward())
+    # 207.38317659145588
