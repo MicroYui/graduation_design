@@ -3,7 +3,7 @@ import pandas as pd
 import torch
 from sko.GA import GA
 # from myGA import GA
-from sko.operators.crossover import crossover_2point_bit
+from sko.operators.crossover import crossover_2point
 import matplotlib.pyplot as plt
 
 import main
@@ -14,8 +14,25 @@ if __name__ == '__main__':
     ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     precision = [1] * (environment.services * environment.nodes) + [1e-2] * (len(environment.start_service) + 1)
-    n_particles = int(100 * len(lb))
-    max_iter = int(20 * len(lb))
+    n_particles = int(500 * len(lb))
+    max_iter = int(1)
+
+    # state = torch.tensor(
+    #     [0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+    #      0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.0000, 0.0000,
+    #      0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+    #      1.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000,
+    #      0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
+    #      0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000,
+    #      0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000,
+    #      0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.0000,
+    #      0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 1.0000, 1.0000, 0.0000,
+    #      0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 0.0000, 1.0000,
+    #      1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+    #      1.0000, 0.9000, 0.8200, 0.4800, 0.6700]
+    # )
+    # environment.update_state(state)
+    # print(environment.get_reward())
 
     # define GA
     ga = GA(func=environment.heuristic_algorithm_fitness_function,
@@ -26,7 +43,7 @@ if __name__ == '__main__':
             lb=lb,
             ub=ub,
             )
-    ga.register(operator_name='crossover', operator=crossover_2point_bit)
+    ga.register(operator_name='crossover', operator=crossover_2point)
 
     # iter
     x_opt, y_opt = ga.run(max_iter=max_iter)
