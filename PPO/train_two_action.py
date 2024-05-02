@@ -1,3 +1,4 @@
+import copy
 import os
 from datetime import datetime
 
@@ -5,7 +6,9 @@ import torch
 import numpy as np
 
 from PPO import PPO
-from scale_min import environment_min
+from scale_min import two_environment_min
+
+
 # from TD3.scale_min import environment_min
 
 
@@ -14,11 +17,11 @@ def train():
     print("============================================================================================")
 
     ####### initialize environment hyperparameters ######
-    env_name = "scale_min2"
+    env_name = "two_action_scale_min_300steps"
 
     has_continuous_action_space = True  # continuous action space; else discrete
 
-    max_ep_len = 1000  # max timesteps in one episode
+    max_ep_len = 300  # max timesteps in one episode
     max_training_timesteps = int(4e6)  # break training loop if timeteps > max_training_timesteps
 
     print_freq = max_ep_len * 10  # print avg reward in the interval (in num timesteps)
@@ -48,10 +51,10 @@ def train():
 
     print("training environment name : " + env_name)
 
-    env = environment_min
+    env = copy.deepcopy(two_environment_min)
 
-    state_dim = env.services * env.nodes
-    action_dim = 3
+    state_dim = env.services * env.nodes + 1
+    action_dim = 4
 
     ###################### logging ######################
 
@@ -157,7 +160,7 @@ def train():
 
     s = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                       0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
-                      1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000])
+                      1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.5000])
 
     # training loop
     while time_step <= max_training_timesteps:
