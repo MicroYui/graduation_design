@@ -16,8 +16,8 @@ if __name__ == '__main__':
     ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     precision = [1] * (environment.services * environment.nodes) + [1e-2] * (len(environment.start_service) + 1)
-    n_particles = int(100 * len(lb))
-    max_iter = int(20 * len(lb))
+    n_particles = int(50 * len(lb))
+    max_iter = int(50)
 
     # define GA
     ga = GA(func=environment.heuristic_algorithm_fitness_function,
@@ -38,6 +38,11 @@ if __name__ == '__main__':
     # fig, ax = plt.subplots(2, 1)
     # ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
     Y_history.min(axis=1).cummin().plot(kind='line')
+
+    best_x = pd.DataFrame({'x_opt': x_opt})
+    best_x.to_csv(f'run_data/GA_{environment.services}_{environment.nodes}_bestX.csv', index=False, sep=',')
+    Y_history.to_csv(f'run_data/GA_{environment.services}_{environment.nodes}.csv', index=False, sep=',')
+
     print("best_x:\n", ga.best_x, "\nbest_y:", ga.best_y)
     print(torch.tensor(ga.best_x))
     plt.xlabel('iter')
