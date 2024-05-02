@@ -8,10 +8,10 @@ def save_graph():
     # env_name = 'CartPole-v1'
     # env_name = 'LunarLander-v2'
     # env_name = 'BipedalWalker-v2'
-    env_name = 'scale_min2'
+    env_name = 'two_action_scale_min_300steps'
 
-    fig_num = 0     #### change this to prevent overwriting figures in same env_name folder
-    plot_avg = True    # plot average of all runs; else plot all runs separately
+    fig_num = 0  #### change this to prevent overwriting figures in same env_name folder
+    plot_avg = True  # plot average of all runs; else plot all runs separately
     fig_width = 10
     fig_height = 6
 
@@ -26,7 +26,8 @@ def save_graph():
     linewidth_var = 2
     alpha_var = 0.1
 
-    colors = ['red', 'blue', 'green', 'orange', 'purple', 'olive', 'brown', 'magenta', 'cyan', 'crimson','gray', 'black']
+    colors = ['red', 'blue', 'green', 'orange', 'purple', 'olive', 'brown', 'magenta', 'cyan', 'crimson', 'gray',
+              'black']
 
     # make directory for saving figures
     figures_dir = "PPO_figs"
@@ -38,7 +39,7 @@ def save_graph():
     if not os.path.exists(figures_dir):
         os.makedirs(figures_dir)
 
-    fig_save_path = figures_dir + '/PPO_' + env_name + '_fig_' + str(fig_num) + '.png'
+    fig_save_path = figures_dir + '/PPO_' + env_name + '_fig_' + str(fig_num) + '.svg'
 
     # get number of log files in directory
     log_dir = "PPO_logs" + '/' + env_name + '/'
@@ -49,7 +50,6 @@ def save_graph():
     all_runs = []
 
     for run_num in range(num_runs):
-
         log_f_name = log_dir + '/PPO_' + env_name + "_log_" + str(run_num) + ".csv"
         print("loading data from : " + log_f_name)
         data = pd.read_csv(log_f_name)
@@ -69,11 +69,15 @@ def save_graph():
         data_avg = df_concat_groupby.mean()
 
         # smooth out rewards to get a smooth and a less smooth (var) plot lines
-        data_avg['reward_smooth'] = data_avg['reward'].rolling(window=window_len_smooth, win_type='triang', min_periods=min_window_len_smooth).mean()
-        data_avg['reward_var'] = data_avg['reward'].rolling(window=window_len_var, win_type='triang', min_periods=min_window_len_var).mean()
+        data_avg['reward_smooth'] = data_avg['reward'].rolling(window=window_len_smooth, win_type='triang',
+                                                               min_periods=min_window_len_smooth).mean()
+        data_avg['reward_var'] = data_avg['reward'].rolling(window=window_len_var, win_type='triang',
+                                                            min_periods=min_window_len_var).mean()
 
-        data_avg.plot(kind='line', x='timestep' , y='reward_smooth',ax=ax,color=colors[0],  linewidth=linewidth_smooth, alpha=alpha_smooth)
-        data_avg.plot(kind='line', x='timestep' , y='reward_var',ax=ax,color=colors[0],  linewidth=linewidth_var, alpha=alpha_var)
+        data_avg.plot(kind='line', x='timestep', y='reward_smooth', ax=ax, color=colors[0], linewidth=linewidth_smooth,
+                      alpha=alpha_smooth)
+        data_avg.plot(kind='line', x='timestep', y='reward_var', ax=ax, color=colors[0], linewidth=linewidth_var,
+                      alpha=alpha_var)
 
         # keep only reward_smooth in the legend and rename it
         handles, labels = ax.get_legend_handles_labels()
@@ -82,19 +86,23 @@ def save_graph():
     else:
         for i, run in enumerate(all_runs):
             # smooth out rewards to get a smooth and a less smooth (var) plot lines
-            run['reward_smooth_' + str(i)] = run['reward'].rolling(window=window_len_smooth, win_type='triang', min_periods=min_window_len_smooth).mean()
-            run['reward_var_' + str(i)] = run['reward'].rolling(window=window_len_var, win_type='triang', min_periods=min_window_len_var).mean()
+            run['reward_smooth_' + str(i)] = run['reward'].rolling(window=window_len_smooth, win_type='triang',
+                                                                   min_periods=min_window_len_smooth).mean()
+            run['reward_var_' + str(i)] = run['reward'].rolling(window=window_len_var, win_type='triang',
+                                                                min_periods=min_window_len_var).mean()
 
             # plot the lines
-            run.plot(kind='line', x='timestep' , y='reward_smooth_' + str(i),ax=ax,color=colors[i % len(colors)],  linewidth=linewidth_smooth, alpha=alpha_smooth)
-            run.plot(kind='line', x='timestep' , y='reward_var_' + str(i),ax=ax,color=colors[i % len(colors)],  linewidth=linewidth_var, alpha=alpha_var)
+            run.plot(kind='line', x='timestep', y='reward_smooth_' + str(i), ax=ax, color=colors[i % len(colors)],
+                     linewidth=linewidth_smooth, alpha=alpha_smooth)
+            run.plot(kind='line', x='timestep', y='reward_var_' + str(i), ax=ax, color=colors[i % len(colors)],
+                     linewidth=linewidth_var, alpha=alpha_var)
 
         # keep alternate elements (reward_smooth_i) in the legend
         handles, labels = ax.get_legend_handles_labels()
         new_handles = []
         new_labels = []
         for i in range(len(handles)):
-            if(i%2 == 0):
+            if (i % 2 == 0):
                 new_handles.append(handles[i])
                 new_labels.append(labels[i])
         ax.legend(new_handles, new_labels, loc=2)
@@ -116,27 +124,9 @@ def save_graph():
     plt.savefig(fig_save_path)
     print("figure saved at : ", fig_save_path)
     print("============================================================================================")
-    
+
     plt.show()
 
 
 if __name__ == '__main__':
-
     save_graph()
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    

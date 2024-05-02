@@ -1,4 +1,6 @@
 import numpy as np
+
+from two_action_environment import two_action_environment
 from new_environment import DRL_Environment
 
 app_fee = 1000
@@ -119,6 +121,12 @@ environment_mid2 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee,
 environment_mid3 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, lambda_out,
                                    start_service, access_node, service_resource_occupancy, node_resource_capacity,
                                    instance, service_dependency, net_delay, compute_time)
+
+two_environment_mid = two_action_environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time,
+                                             lambda_out,
+                                             start_service, access_node, service_resource_occupancy,
+                                             node_resource_capacity,
+                                             instance, service_dependency, net_delay, compute_time)
 
 if __name__ == '__main__':
     print(compute_time)

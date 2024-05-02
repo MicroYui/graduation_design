@@ -2,7 +2,7 @@ import time
 import gym
 import torch
 
-from scale_min import environment_min
+from scale_min import two_environment_min
 from PPO import PPO
 
 
@@ -27,7 +27,7 @@ def test():
     # max_ep_len = 1500           # max timesteps in one episode
     # action_std = 0.1            # set same std for action distribution which was used while saving
 
-    env_name = "scale_min"
+    env_name = "two_action_scale_min"
     has_continuous_action_space = True
     max_ep_len = 1000  # max timesteps in one episode
     action_std = 0.1  # set same std for action distribution which was used while saving
@@ -46,10 +46,10 @@ def test():
 
     #####################################################
 
-    env = environment_min
+    env = two_environment_min
 
-    state_dim = env.services * env.nodes
-    action_dim = 3
+    state_dim = env.services * env.nodes + 1
+    action_dim = 4
 
     # initialize a PPO agent
     ppo_agent = PPO(state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space,
@@ -74,7 +74,7 @@ def test():
         ep_reward = 0
         state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
                               0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
-                              1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000])
+                              1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.5000])
 
         for t in range(1, max_ep_len + 1):
             action = ppo_agent.select_action(state)

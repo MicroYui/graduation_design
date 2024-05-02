@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from two_action_environment import two_action_environment
 from one_action_environment import one_action_environment
@@ -81,3 +82,10 @@ two_environment_min = two_action_environment(app_fee, cpu_fee, ram_fee, disk_fee
                                              start_service, access_node, service_resource_occupancy,
                                              node_resource_capacity,
                                              instance, service_dependency, net_delay, compute_time)
+
+if __name__ == '__main__':
+    state = torch.tensor([0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+                          0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000,
+                          1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.5000])
+    two_environment_min.update_state(state)
+    print(two_environment_min.get_reward())
