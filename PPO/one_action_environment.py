@@ -294,3 +294,14 @@ class one_action_environment(object):
         if not self.constrains:
             return self.max_time
         return state_fitness
+
+    def get_instance_cost(self):
+        instance_cost = 0
+        for node in range(self.nodes):
+            cpu, ram, disk = 0, 0, 0
+            for service in range(self.services):
+                cpu += self.service_resource_occupancy[service, 0] * self.instance[service, node]
+                ram += self.service_resource_occupancy[service, 1] * self.instance[service, node]
+                disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
+            instance_cost += cpu * self.cpu_fee + ram * self.ram_fee + disk * self.disk_fee
+        return instance_cost

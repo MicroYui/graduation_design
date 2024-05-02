@@ -1,14 +1,13 @@
 import numpy as np
 import pandas as pd
+import torch
 from sko.GA import GA
 # from myGA import GA
 from sko.operators.crossover import crossover_2point_bit
 import matplotlib.pyplot as plt
 
 import main
-from TD3.scale_min import environment_min as environment
-# from TD3.scale_mid import environment_mid as environment
-# from TD3.scale_max import environment_max as environment
+from TD3.scale_7_7 import environment_7services_7nodes as environment
 
 if __name__ == '__main__':
     # init
@@ -38,6 +37,10 @@ if __name__ == '__main__':
     # ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
     Y_history.min(axis=1).cummin().plot(kind='line')
     print("best_x:\n", ga.best_x, "\nbest_y:", ga.best_y)
-    plt.savefig("GA_min2.svg")
+    print(torch.tensor(ga.best_x))
+    plt.xlabel('iter')
+    plt.ylabel('fitness')
+    plt.title('GA_7services_7nodes')
+    plt.savefig("GA_7services_7nodes.svg")
     plt.show()
 

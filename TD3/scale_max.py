@@ -1,7 +1,7 @@
 import numpy as np
 from new_environment import DRL_Environment
 
-app_fee = 2000
+app_fee = 1000
 cpu_fee = 1
 ram_fee = 0.001
 disk_fee = 0.001
@@ -12,7 +12,7 @@ app_3_request = 30
 app_4_request = 30
 services = 15
 nodes = 15
-max_time = 999999
+max_time = 999
 start_service = [0, 6, 9, 11]
 lambda_out = [app_1_request, app_2_request, app_3_request, app_4_request]
 access_node = [0, 3, 8, 13]
