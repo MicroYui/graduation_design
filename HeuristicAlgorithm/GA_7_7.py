@@ -14,8 +14,8 @@ if __name__ == '__main__':
     ub = [1] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     lb = [0] * (environment.services * environment.nodes + len(environment.start_service) + 1)
     precision = [1] * (environment.services * environment.nodes) + [1e-2] * (len(environment.start_service) + 1)
-    n_particles = int(100 * len(lb))
-    max_iter = int(20 * len(lb))
+    n_particles = int(10 * len(lb))
+    max_iter = int(10 * len(lb))
 
     # define GA
     ga = GA(func=environment.heuristic_algorithm_fitness_function,

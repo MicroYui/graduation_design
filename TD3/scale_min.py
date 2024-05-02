@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+
 from new_environment import DRL_Environment
 
 app_fee = 2000
@@ -67,3 +69,13 @@ environment_min2 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee,
 environment_min3 = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
                                    start_service, access_node, service_resource_occupancy, node_resource_capacity,
                                    instance, service_dependency, net_delay, compute_time)
+
+if __name__ == '__main__':
+    state = torch.tensor([0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
+                          0.0000, 1.0000, 1.0000, 1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 1.0000,
+                          1.0000, 1.0000, 0.0000, 1.0000, 0.0000, 0.0000, 1.0000, 0.9600, 0.9500,
+                          0.7000])
+    environment_min.update_state(state)
+    print(environment_min.check_constrains())
+    print(environment_min.get_reward())
+    # 207.38317659145588

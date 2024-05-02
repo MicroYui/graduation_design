@@ -152,7 +152,7 @@ class GA(GeneticAlgorithmBase):
                  lb=-1, ub=1,
                  constraint_eq=tuple(), constraint_ueq=tuple(),
                  precision=1e-7, early_stop=None,
-                 services=5, nodes=5):
+                 services=5, nodes=5, first_chrom=None):
         super().__init__(func, n_dim, size_pop, max_iter, prob_mut, constraint_eq, constraint_ueq, early_stop)
 
         self.lb, self.ub = np.array(lb) * np.ones(self.n_dim), np.array(ub) * np.ones(self.n_dim)
@@ -160,12 +160,20 @@ class GA(GeneticAlgorithmBase):
         self.len_chrom = 8 * self.n_dim
         self.services = services
         self.nodes = nodes
+        self.first_chrom = first_chrom
 
         self.crtbp()
 
     def crtbp(self):
-        # create the population
-        self.Chrom = np.random.randint(low=0, high=2, size=(self.size_pop, self.len_chrom))
+        # 将输入进来的first_chrom转换为二进制编码
+        if self.first_chrom is not None:
+            self.Chrom = np.random.randint(low=0, high=2, size=(self.size_pop, self.len_chrom))
+            for i in range(self.n_dim):
+                start = i * 8
+                end = (i + 1) * 8
+                self.Chrom[0, start:end] = [int(c) for c in self.encode_decimal(self.first_chrom[i], 8)]
+        else:
+            self.Chrom = np.random.randint(low=0, high=2, size=(self.size_pop, self.len_chrom))
         return self.Chrom
 
     def decode_binary(self, binary_string):
@@ -193,7 +201,8 @@ class GA(GeneticAlgorithmBase):
                 X[i, j] = self.decode_decimal(''.join([str(c) for c in Chrom[i, start:end]]))
 
         X = np.clip(X, 0, 1)
-        X[:self.services * self.nodes] = np.round(X[:self.services * self.nodes])
+        for i in range(self.size_pop):
+            X[i][:self.services * self.nodes] = np.round(X[i][:self.services * self.nodes], decimals=0)
         return X
 
     ranking = ranking.ranking
