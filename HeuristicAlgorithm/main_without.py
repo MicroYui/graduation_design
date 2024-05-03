@@ -26,8 +26,9 @@ def my_ga(environment, state, length, additional, file_name):
     ub = [1] * (length + additional)
     lb = [0] * (length + additional)
     precision = [1] * length + [1e-2] * additional
-    n_particles = int(50 * len(lb))
-    max_iter = int(100)
+    n_particles = int(1 * len(lb))
+    n_particles += n_particles % 2
+    max_iter = int(2)
 
     # define GA
     ga = GA(func=environment.heuristic_algorithm_fitness_function,
@@ -51,14 +52,15 @@ def my_ga(environment, state, length, additional, file_name):
     # fig, ax = plt.subplots(2, 1)
     # ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
     # Y_history.min(axis=1).cummin().plot(kind='line')
-    Y_best_history = pd.DataFrame(ga.all_history_Y.min(axis=1).cummin())
+    temp = pd.DataFrame(ga.all_history_Y)
+    Y_best_history = pd.DataFrame(temp.min(axis=1).cummin())
 
     best_x = pd.DataFrame({'x_opt': x_opt})
     best_x.to_csv(f'run_data/{file_name}_{environment.services}_{environment.nodes}_bestX.csv', index=False, sep=',')
     Y_best_history.to_csv(f'run_data/{file_name}_{environment.services}_{environment.nodes}.csv', index=False, sep=',')
 
     print("best_x:\n", ga.best_x, "\nbest_y:", ga.best_y)
-    print(torch.tensor(ga.best_x))
+    # print(torch.tensor(ga.best_x))
 
 
 state1_without_request = torch.tensor([0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,
@@ -315,8 +317,8 @@ if __name__ == '__main__':
             environment_list = only_instance_environment_list
             state_list = only_instance_state_list
             additional = 0
-        length = environment_list[0].services * environment_list[0].nodes
         for index in range(len(environment_list)):
             environment = environment_list[index]
             state = state_list[index]
+            length = environment.services * environment.nodes
             my_ga(environment, state, length, additional, file_name)

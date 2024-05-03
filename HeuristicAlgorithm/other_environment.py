@@ -483,6 +483,9 @@ class without_route_environment(base_environment):
         self.instance = instance_vector
         request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
         self.delta = request_vector
+        print(f"delta:{self.delta}")
+        print(f"request_out:{self.request_out}")
+        print(f"start_service:{self.start_service}")
         self.request_in = self.delta * self.request_out
         # self.request_rate = pre_state[-1]
         # self.update_important_rate(self.request_rate)
