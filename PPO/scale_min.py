@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from new_environment import DRL_Environment
+import other_environment
 
 app_fee = 2000
 cpu_fee = 1
@@ -61,6 +62,27 @@ compute_time = np.array([
 environment_min = DRL_Environment(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, rows, cols, max_time, lambda_out,
                                   start_service, access_node, service_resource_occupancy, node_resource_capacity,
                                   instance, service_dependency, net_delay, compute_time)
+
+without_request_environment_min = (
+    other_environment.without_request_environment(app_fee, cpu_fee, ram_fee, disk_fee,
+                                                  max_fee, rows, cols, max_time, lambda_out,
+                                                  start_service, access_node, service_resource_occupancy,
+                                                  node_resource_capacity,
+                                                  instance, service_dependency, net_delay, compute_time))
+
+without_route_environment_min = (
+    other_environment.without_route_environment(app_fee, cpu_fee, ram_fee, disk_fee,
+                                                max_fee, rows, cols, max_time, lambda_out,
+                                                start_service, access_node, service_resource_occupancy,
+                                                node_resource_capacity,
+                                                instance, service_dependency, net_delay, compute_time))
+
+only_instance_environment_min = (
+    other_environment.only_instance_environment(app_fee, cpu_fee, ram_fee, disk_fee,
+                                                max_fee, rows, cols, max_time, lambda_out,
+                                                start_service, access_node, service_resource_occupancy,
+                                                node_resource_capacity,
+                                                instance, service_dependency, net_delay, compute_time))
 
 if __name__ == '__main__':
     state = torch.tensor([0.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000, 1.0000, 0.0000, 1.0000,

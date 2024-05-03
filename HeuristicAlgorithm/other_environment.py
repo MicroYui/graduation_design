@@ -6,7 +6,7 @@ def clamp(n, minn, maxn):
     return max(min(maxn, n), minn)
 
 
-class two_action_environment(object):
+class base_environment(object):
     def __init__(self, app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes,
                  max_time, request_out, start_service, access_node, service_resource_occupancy,
                  node_resource_capacity, instance, service_dependency, net_delay, compute_time):
@@ -21,7 +21,7 @@ class two_action_environment(object):
         self.start_service = start_service
         self.delta = np.random.rand(len(self.start_service))
         self.request_out = request_out
-        self.request_in = self.request_out
+        self.request_in = self.delta * self.request_out
         self.access_node = access_node
         self.service_resource_occupancy = service_resource_occupancy
         self.node_resource_capacity = node_resource_capacity
@@ -245,9 +245,9 @@ class two_action_environment(object):
         pre_state = state.detach().cpu().numpy()
         instance_vector = pre_state[0: self.services * self.nodes].reshape(self.services, self.nodes).astype(int)
         self.instance = instance_vector
-        # request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
-        # self.delta = request_vector
-        # self.request_in = self.delta * self.request_out
+        request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
+        self.delta = request_vector
+        self.request_in = self.delta * self.request_out
         self.request_rate = pre_state[-1]
         self.update_important_rate(self.request_rate)
         self.update_request_arrive_array_matrix()
@@ -284,11 +284,14 @@ class two_action_environment(object):
             state[x * self.nodes + y] = 1
         else:
             state[x * self.nodes + y] = 0
-        x = int((action[3] / 2 + 0.5) * 3) % 3
-        if x == 0:
+        x = int((action[3] / 2 + 0.5) * len(self.delta)) % len(self.delta)
+        if action[4] > 0:
+            state[self.services * self.nodes + x] += 0.01
+        else:
+            state[self.services * self.nodes + x] -= 0.01
+        state[self.services * self.nodes + x] = np.clip(state[self.services * self.nodes + x], 0, 1)
+        if action[5] > 0:
             state[-1] += 0.01
-        elif x == 1:
-            state[-1] += 0
         else:
             state[-1] -= 0.01
         state[-1] = np.clip(state[-1], 0, 1)
@@ -311,7 +314,7 @@ class two_action_environment(object):
         self.update_state(current_state)
         state_fitness = self.get_reward()
         if not self.constrains:
-            return self.max_time
+            return self.max_time + self.cost_punishment() + self.capacity_punishment() + self.instance_punishment()
         return state_fitness
 
     def step_solo(self, state, action):
@@ -380,3 +383,153 @@ class two_action_environment(object):
         if not self.constrains:
             return self.max_time
         return state_fitness
+
+    def cost_punishment(self):
+        instance_cost = 0
+        for node in range(self.nodes):
+            cpu, ram, disk = 0, 0, 0
+            for service in range(self.services):
+                cpu += self.service_resource_occupancy[service, 0] * self.instance[service, node]
+                ram += self.service_resource_occupancy[service, 1] * self.instance[service, node]
+                disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
+            instance_cost += cpu * self.cpu_fee + ram * self.ram_fee + disk * self.disk_fee
+        request_decline = sum(self.request_out) - sum(self.request_in)
+        request_cost = request_decline * self.app_fee
+        total_cost = instance_cost + request_cost
+        if total_cost <= self.max_fee:
+            return 0
+        else:
+            return total_cost - self.max_fee
+
+    def instance_punishment(self):
+        number = 0
+        for service in range(self.services):
+            instance_num = self.instance[service, :].sum()
+            if instance_num == 0:
+                number += 1
+        return number * self.max_time
+
+    def capacity_punishment(self):
+        total = 0
+        for node in range(self.nodes):
+            cpu, ram, disk = 0, 0, 0
+            for service in range(self.services):
+                cpu += self.service_resource_occupancy[service, 0] * self.instance[service, node]
+                ram += self.service_resource_occupancy[service, 1] * self.instance[service, node]
+                disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
+            if cpu > self.node_resource_capacity[node, 0]:
+                total += (cpu - self.node_resource_capacity[node, 0]) * self.cpu_fee * 100
+            if ram > self.node_resource_capacity[node, 1]:
+                total += (ram - self.node_resource_capacity[node, 1]) * self.ram_fee * 100
+            if disk > self.node_resource_capacity[node, 2]:
+                total += (disk - self.node_resource_capacity[node, 2]) * self.disk_fee * 100
+        return total
+
+
+class without_request_environment(base_environment):
+    def __init__(self, app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, request_out,
+                 start_service, access_node, service_resource_occupancy, node_resource_capacity, instance,
+                 service_dependency, net_delay, compute_time):
+        super().__init__(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, request_out,
+                         start_service, access_node, service_resource_occupancy, node_resource_capacity, instance,
+                         service_dependency, net_delay, compute_time)
+        self.request_in = self.request_out
+
+    def update_state(self, state):
+        self.constrains = True
+        pre_state = state.detach().cpu().numpy()
+        instance_vector = pre_state[0: self.services * self.nodes].reshape(self.services, self.nodes).astype(int)
+        self.instance = instance_vector
+        # request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
+        # self.delta = request_vector
+        # self.request_in = self.delta * self.request_out
+        self.request_rate = pre_state[-1]
+        self.update_important_rate(self.request_rate)
+        self.update_request_arrive_array_matrix()
+        self.get_max_total_time()
+        self.check_constrains()
+
+
+class without_route_environment(base_environment):
+    def __init__(self, app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, request_out,
+                 start_service, access_node, service_resource_occupancy, node_resource_capacity, instance,
+                 service_dependency, net_delay, compute_time):
+        super().__init__(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, request_out,
+                         start_service, access_node, service_resource_occupancy, node_resource_capacity, instance,
+                         service_dependency, net_delay, compute_time)
+
+    def route(self, compute_time_vector: list, transmit_time_vector: list):
+        route_vector = []
+        importance_rate_vector = []
+        total = 0
+
+        for node in range(self.nodes):
+            compute_time = compute_time_vector[node]
+            if compute_time != self.max_time:
+                total += 1
+
+        for node in range(self.nodes):
+            compute_time = compute_time_vector[node]
+            if compute_time == self.max_time:
+                route_vector.append(0)
+            else:
+                route_vector.append(1 / total)
+        return route_vector
+
+    def update_state(self, state):
+        self.constrains = True
+        pre_state = state.detach().cpu().numpy()
+        instance_vector = pre_state[0: self.services * self.nodes].reshape(self.services, self.nodes).astype(int)
+        self.instance = instance_vector
+        request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
+        self.delta = request_vector
+        self.request_in = self.delta * self.request_out
+        # self.request_rate = pre_state[-1]
+        # self.update_important_rate(self.request_rate)
+        self.update_request_arrive_array_matrix()
+        self.get_max_total_time()
+        self.check_constrains()
+
+
+class only_instance_environment(base_environment):
+    def __init__(self, app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, request_out,
+                 start_service, access_node, service_resource_occupancy, node_resource_capacity, instance,
+                 service_dependency, net_delay, compute_time):
+        super().__init__(app_fee, cpu_fee, ram_fee, disk_fee, max_fee, services, nodes, max_time, request_out,
+                         start_service, access_node, service_resource_occupancy, node_resource_capacity, instance,
+                         service_dependency, net_delay, compute_time)
+        self.request_in = self.request_out
+
+    def route(self, compute_time_vector: list, transmit_time_vector: list):
+        route_vector = []
+        importance_rate_vector = []
+        total = 0
+
+        for node in range(self.nodes):
+            compute_time = compute_time_vector[node]
+            if compute_time != self.max_time:
+                total += 1
+
+        for node in range(self.nodes):
+            compute_time = compute_time_vector[node]
+            if compute_time == self.max_time:
+                route_vector.append(0)
+            else:
+                route_vector.append(1 / total)
+        return route_vector
+
+    def update_state(self, state):
+        self.constrains = True
+        pre_state = state.detach().cpu().numpy()
+        instance_vector = pre_state[0: self.services * self.nodes].reshape(self.services, self.nodes).astype(int)
+        self.instance = instance_vector
+        # request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
+        # self.delta = request_vector
+        # self.request_in = self.delta * self.request_out
+        # self.request_rate = pre_state[-1]
+        # self.update_important_rate(self.request_rate)
+        self.update_request_arrive_array_matrix()
+        self.get_max_total_time()
+        self.check_constrains()
+
+
