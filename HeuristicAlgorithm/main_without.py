@@ -26,9 +26,9 @@ def my_ga(environment, state, length, additional, file_name):
     ub = [1] * (length + additional)
     lb = [0] * (length + additional)
     precision = [1] * length + [1e-2] * additional
-    n_particles = int(1 * len(lb))
+    n_particles = int(50 * len(lb))
     n_particles += n_particles % 2
-    max_iter = int(2)
+    max_iter = int(100)
 
     # define GA
     ga = GA(func=environment.heuristic_algorithm_fitness_function,
@@ -312,7 +312,6 @@ if __name__ == '__main__':
         elif file_name == "without_route":
             environment_list = without_route_environment_list
             state_list = without_route_state_list
-            additional = len(environment_list[0].start_service)
         else:
             environment_list = only_instance_environment_list
             state_list = only_instance_state_list
@@ -321,4 +320,6 @@ if __name__ == '__main__':
             environment = environment_list[index]
             state = state_list[index]
             length = environment.services * environment.nodes
+            if file_name == "without_route":
+                additional = len(environment.start_service)
             my_ga(environment, state, length, additional, file_name)
