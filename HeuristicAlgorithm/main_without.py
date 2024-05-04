@@ -309,17 +309,24 @@ if __name__ == '__main__':
             environment_list = without_request_environment_list
             state_list = without_request_state_list
             additional = 1
+            continue
         elif file_name == "without_route":
             environment_list = without_route_environment_list
             state_list = without_route_state_list
+            continue
         else:
             environment_list = only_instance_environment_list
             state_list = only_instance_state_list
             additional = 0
-        for index in range(len(environment_list)):
-            environment = environment_list[index]
-            state = state_list[index]
-            length = environment.services * environment.nodes
-            if file_name == "without_route":
-                additional = len(environment.start_service)
-            my_ga(environment, state, length, additional, file_name)
+        # for index in range(len(environment_list)):
+        #     environment = environment_list[index]
+        #     state = state_list[index]
+        #     length = environment.services * environment.nodes
+        #     if file_name == "without_route":
+        #         additional = len(environment.start_service)
+        #     my_ga(environment, state, length, additional, file_name)
+        index = len(environment_list) - 1
+        environment = environment_list[index]
+        state = state_list[index]
+        length = environment.services * environment.nodes
+        my_ga(environment, state, length, additional, file_name)
