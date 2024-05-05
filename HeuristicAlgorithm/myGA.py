@@ -109,43 +109,6 @@ class GeneticAlgorithmBase(SkoBase, metaclass=ABCMeta):
 
 
 class GA(GeneticAlgorithmBase):
-    """genetic algorithm
-
-    Parameters
-    ----------------
-    func : function
-        The func you want to do optimal
-    n_dim : int
-        number of variables of func
-    lb : array_like
-        The lower bound of every variables of func
-    ub : array_like
-        The upper bound of every variables of func
-    constraint_eq : tuple
-        equal constraint
-    constraint_ueq : tuple
-        unequal constraint
-    precision : array_like
-        The precision of every variables of func
-    size_pop : int
-        Size of population
-    max_iter : int
-        Max of iter
-    prob_mut : float between 0 and 1
-        Probability of mutation
-    Attributes
-    ----------------------
-    Lind : array_like
-         The num of genes of every variable of func（segments）
-    generation_best_X : array_like. Size is max_iter.
-        Best X of every generation
-    generation_best_ranking : array_like. Size if max_iter.
-        Best ranking of every generation
-    Examples
-    -------------
-    https://github.com/guofei9987/scikit-opt/blob/master/examples/demo_ga.py
-    """
-
     def __init__(self, func, n_dim,
                  size_pop=50, max_iter=200,
                  prob_mut=0.001,

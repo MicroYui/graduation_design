@@ -59,6 +59,7 @@ class DRL_Environment(object):
                 disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
             if cpu > self.node_resource_capacity[node, 0] or ram > self.node_resource_capacity[node, 1] \
                     or disk > self.node_resource_capacity[node, 2]:
+                # print(f"node{node}容量约束不满足")
                 return False
         return True
 
@@ -130,6 +131,12 @@ class DRL_Environment(object):
                 self.node_capacity_constrains():
             # print("基础约束不满足")
             self.constrains = False
+        # if not self.cost_constrains():
+        #     print("费用约束不满足")
+        # if not self.instance_constrains():
+        #     print("实例约束不满足")
+        # if not self.node_capacity_constrains():
+        #     print("节点容量约束不满足")
         if self.request_rate == 0 or self.network_rate == 0:
             self.constrains = False
         return self.constrains
@@ -243,12 +250,15 @@ class DRL_Environment(object):
     def update_state(self, state):
         self.constrains = True
         pre_state = state.detach().cpu().numpy()
-        instance_vector = pre_state[0: self.services * self.nodes].reshape(self.services, self.nodes).astype(int)
+        instance_vector = pre_state[: self.services * self.nodes].reshape(self.services, self.nodes).astype(int)
+        # print(instance_vector)
         self.instance = instance_vector
         request_vector = pre_state[self.services * self.nodes: self.services * self.nodes + len(self.start_service)]
+        # print(request_vector)
         self.delta = request_vector
         self.request_in = self.delta * self.request_out
         self.request_rate = pre_state[-1]
+        # print(self.request_rate)
         self.update_important_rate(self.request_rate)
         self.update_request_arrive_array_matrix()
         self.get_max_total_time()
@@ -424,3 +434,28 @@ class DRL_Environment(object):
             if disk > self.node_resource_capacity[node, 2]:
                 total += (disk - self.node_resource_capacity[node, 2]) * self.disk_fee * 100
         return total
+
+    def remain_cost(self):
+        instance_cost = 0
+        for node in range(self.nodes):
+            cpu, ram, disk = 0, 0, 0
+            for service in range(self.services):
+                cpu += self.service_resource_occupancy[service, 0] * self.instance[service, node]
+                ram += self.service_resource_occupancy[service, 1] * self.instance[service, node]
+                disk += self.service_resource_occupancy[service, 2] * self.instance[service, node]
+            instance_cost += cpu * self.cpu_fee + ram * self.ram_fee + disk * self.disk_fee
+        request_decline = sum(self.request_out) - sum(self.request_in)
+        request_cost = request_decline * self.app_fee
+        total_cost = instance_cost + request_cost
+        return self.max_fee - total_cost
+
+    def get_max_time_app(self):
+        max_total_time = 0
+        max_app = 0
+        # print("start_service: ", self.start_service)
+        for app in range(len(self.start_service)):
+            total_time = self.get_app_total_time(app)
+            if total_time > max_total_time:
+                max_total_time = total_time
+                max_app = app
+        return max_app

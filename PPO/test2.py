@@ -2,7 +2,7 @@ import time
 import gym
 import torch
 
-from TD3.scale_min import environment_min
+from scale_min import environment_min
 from PPO import PPO
 
 
@@ -27,7 +27,7 @@ def test():
     # max_ep_len = 1500           # max timesteps in one episode
     # action_std = 0.1            # set same std for action distribution which was used while saving
 
-    env_name = "scale_min_solo"
+    env_name = "scale_5_5"
     has_continuous_action_space = True
     max_ep_len = 1000  # max timesteps in one episode
     action_std = 0.1  # set same std for action distribution which was used while saving

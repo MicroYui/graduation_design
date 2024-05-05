@@ -8,7 +8,7 @@ def save_graph():
     # env_name = 'CartPole-v1'
     # env_name = 'LunarLander-v2'
     # env_name = 'BipedalWalker-v2'
-    env_name = 'two_action_scale_min_300steps'
+    env_name = 'scale_5_5'
 
     fig_num = 0  #### change this to prevent overwriting figures in same env_name folder
     plot_avg = True  # plot average of all runs; else plot all runs separately
@@ -39,7 +39,7 @@ def save_graph():
     if not os.path.exists(figures_dir):
         os.makedirs(figures_dir)
 
-    fig_save_path = figures_dir + '/PPO_' + env_name + '_fig_' + str(fig_num) + '.svg'
+    fig_save_path = figures_dir + '/PPO_' + env_name + '_fig_' + str(fig_num) + '.jpg'
 
     # get number of log files in directory
     log_dir = "PPO_logs" + '/' + env_name + '/'
